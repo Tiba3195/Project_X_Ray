@@ -44,4 +44,7 @@ public:
 		ATriggerVolume* Box;
 
 	 UTurretAttachmenttComponent* TurretAttachmenttComponent;
+
+	 UPROPERTY(EditAnywhere)
+		 UBoxComponent* VisBox;
 };

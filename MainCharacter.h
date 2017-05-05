@@ -4,6 +4,7 @@
 #include "Project_X_Ray.h"
 #include "GameFramework/Character.h"
 #include "Project_X_RayGameModeBase.h"
+#include "ProjectileFireControlComponent.h"
 #include "MainCharacter.generated.h"
 
 UCLASS()
@@ -60,7 +61,7 @@ public:
 	   UCameraComponent* OurCamera;
 
 	UPROPERTY(EditAnywhere)
-		USceneComponent* OurVisibleComponent;
+		USceneComponent* OurVisibleComponent;	
 
 	//Sets the Camera Offset
 	UPROPERTY(EditAnywhere)
@@ -77,22 +78,26 @@ public:
 	// First-person mesh (arms), visible only to the owning player.
 	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
 		USkeletalMeshComponent* FPSMesh;
+	// First-person mesh (arms), visible only to the owning player.
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+		USkeletalMeshComponent* FP_Gun;
+	// First-person mesh (arms), visible only to the owning player.
+	UPROPERTY(VisibleDefaultsOnly, Category = Mesh)
+		USceneComponent* MuzzleOffset;
 
 	// Function that handles firing projectiles.
 	UFUNCTION()
 		void Fire();
 
 	// Gun muzzle's offset from the camera location.
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-		FVector MuzzleOffset = FVector(0.0f, 25.0f, 0.0f);
+	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	//	FVector MuzzleOffset = FVector(0.0f, 25.0f, 0.0f);
 
 	// Gun muzzle's offset from the camera location.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 		int PlayerID=0;
 
-	// Projectile class to spawn.
-	UPROPERTY(EditDefaultsOnly, Category = Projectile)
-		TSubclassOf<class AFPSProjectile> ProjectileClass;
+
 
 	bool IsActive = false;
 
@@ -104,5 +109,12 @@ public:
 	UFUNCTION(BlueprintCallable, Category = PlayerAbility)
 		virtual void CheckInView();
 
+	void AddControllerPitchInputEX(float Val);
 
+	void AddControllerYawInputEX(float Val);
+	void	ShowMenu();
+
+	void SwitchToMotherShip();
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+		UProjectileFireControlComponent* ProjectileFireControlComponent;
 };

@@ -2,7 +2,7 @@
 
 #include "Project_X_Ray.h"
 #include "TurretHardPoint.h"
-
+#include "GlobalGameState.h"
 #include "MediumTurretActor.h"
 #include "LightTurretActor.h"
 #include "HeavyTurretActor.h"
@@ -30,7 +30,18 @@ ATurretHardPoint::ATurretHardPoint(const class FObjectInitializer& PCIP)
 
 	TurretAttachment = CreateDefaultSubobject<UTurretAttachmenttComponent>(TEXT("Turret Attachment"));
 	TurretAttachment->SetupAttachment(HardpointBase);
+
+	HardPointAttachment = CreateDefaultSubobject<UHardPointAttachment>(TEXT("HardPoint Attachment"));
+	HardPointAttachment->SetupAttachment(HardpointBase);
 	//TurretAttachment->SetRelativeLocation(FVector(0.0f, 0.0f, 113.179932));
+
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		
+	}
+
 
 	static ConstructorHelpers::FClassFinder<ATurretActor> TheTurret(TEXT("/Game/Turrets/BP_LightTurretActor.BP_LightTurretActor_C"));
 	if (TheTurret.Class != NULL)
@@ -68,6 +79,8 @@ ATurretHardPoint::ATurretHardPoint()
 	TurretAttachment = CreateDefaultSubobject<UTurretAttachmenttComponent>(TEXT("Turret Attachment"));
 	TurretAttachment->SetupAttachment(HardpointBase);
 	//TurretAttachment->SetRelativeLocation(FVector(0.0f, 0.0f,113.179932));
+	HardPointAttachment = CreateDefaultSubobject<UHardPointAttachment>(TEXT("HardPoint Attachment"));
+	HardPointAttachment->SetupAttachment(HardpointBase);
 
 	static ConstructorHelpers::FClassFinder<ATurretActor> TheTurret(TEXT("/Game/Turrets/BP_TurretActor.BP_TurretActor_C"));
 	if (TheTurret.Class != NULL)
@@ -83,8 +96,7 @@ void ATurretHardPoint::RegisterDelegate()
 
 void ATurretHardPoint::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-
-	Super::EndPlay(EndPlayReason);
+		Super::EndPlay(EndPlayReason);
 
 }
 
@@ -92,14 +104,23 @@ void ATurretHardPoint::BeginPlay()
 {
 	Super::BeginPlay();
 	RegisterDelegate();
+
+	UWorld* World = GetWorld();
+	AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
+	if (GS)
+	{
+		int counter = GS->TurretHardPoints.Num();
+		HardPointIndex = counter;
+
+		GS->TurretHardPoints.Add(this);
+	}
+
 //	BuildTurret();
 }
 
 void ATurretHardPoint::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-
 }
 
 void ATurretHardPoint::BuildTurret()
@@ -130,22 +151,19 @@ void ATurretHardPoint::BuildTurret()
 	}
 }
 
-
-
-
-
-
 void ATurretHardPoint::BuildTurret(FString TurretName)
 {
 	UWorld* World = GetWorld();
 	if (World)
 	{
+	
 		FActorSpawnParameters SpawnParams;
 
 		if (TurretName == HeavyTurretName)
 		{
 			if (HeavyTurretActorClassHolder != NULL)
-			{			
+			{		
+			
 				AHeavyTurretActor* temp = Cast<AHeavyTurretActor>(HeavyTurretActorClassHolder->GetDefaultObject());
 				FVector tempV = temp->TurretAttachment->RelativeLocation;
 				FVector tempV2 = TurretAttachment->RelativeLocation;

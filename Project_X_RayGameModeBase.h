@@ -20,11 +20,7 @@ public:
 
 	virtual void StartPlay() override;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Controllers")
-		TSubclassOf<AActor> MotherShipController;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Controllers")
-		TSubclassOf<AActor> PlayerController;
 
 public:
 

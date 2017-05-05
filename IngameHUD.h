@@ -4,9 +4,7 @@
 
 #include "GameFramework/HUD.h"
 #include "TurretActor.h"
-#include "MotherShip.h"
 #include "TurretHardPoint.h"
-
 #include "IngameHUD.generated.h"
 
 /**
@@ -231,7 +229,8 @@ protected:
 
 
 public:
-
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
 
 
 	void DrawHUD_DrawCursor();

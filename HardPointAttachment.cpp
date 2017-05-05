@@ -1,10 +1,9 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Project_X_Ray.h"
-#include "TurretAttachmenttComponent.h"
+#include "HardPointAttachment.h"
 
-
-UTurretAttachmenttComponent::UTurretAttachmenttComponent(const class FObjectInitializer& PCIP)
+UHardPointAttachment::UHardPointAttachment(const class FObjectInitializer& PCIP)
 	: Super(PCIP)
 {
 	PrimaryComponentTick.bCanEverTick = true;
@@ -13,10 +12,8 @@ UTurretAttachmenttComponent::UTurretAttachmenttComponent(const class FObjectInit
 	Box->bHiddenInGame = true;
 	Box->SetupAttachment(this);
 }
-
-
 // Sets default values for this component's properties
-UTurretAttachmenttComponent::UTurretAttachmenttComponent()
+UHardPointAttachment::UHardPointAttachment()
 {
 	// Set this component to be initialized when the game starts, and to be ticked every frame.  You can turn these features
 	// off to improve performance if you don't need them.
@@ -25,32 +22,25 @@ UTurretAttachmenttComponent::UTurretAttachmenttComponent()
 	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Vis Box"));
 	Box->bHiddenInGame = true;
 	Box->SetupAttachment(this);
-
-
-
+	// ...
 }
 
 
 // Called when the game starts
-void UTurretAttachmenttComponent::BeginPlay()
+void UHardPointAttachment::BeginPlay()
 {
 	Super::BeginPlay();
-	PrimaryComponentTick.bCanEverTick = true;
 
-	
+
 	
 }
 
 
 // Called every frame
-void UTurretAttachmenttComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
+void UHardPointAttachment::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-//	PropertyChangedEvent
 
 	// ...
 }
-
-
-
 

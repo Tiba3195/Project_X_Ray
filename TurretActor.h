@@ -3,7 +3,7 @@
 #pragma once
 #include "TurretAttachmenttComponent.h"
 #include "UsableActor.h"
-
+#include "ProjectileFireControlComponent.h"
 #include "TurretActor.generated.h"
 
 /**
@@ -14,6 +14,9 @@ class PROJECT_X_RAY_API ATurretActor : public AUsableActor
 {
 	GENERATED_BODY()
 	
+
+	
+
 public:
 	// Sets default values for this actor's properties
 	ATurretActor();
@@ -21,6 +24,7 @@ public:
 
 	void RegisterDelegate();
 
+	void AddMuzzleOffSet(USceneComponent* MuzzleOffset);
 //	void OnBeginTriggerOverlap( AActor* OtherActor, FVector NormalImpulse, const FHitResult& Hit);
 	UFUNCTION()
 	void OnBeginTriggerOverlap(AActor* OverlappedActor, AActor* OtherActor);
@@ -40,7 +44,8 @@ public:
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-
+	UPROPERTY(EditAnywhere)
+		TArray<USceneComponent*> MuzzleOffsets;
 
 	//Sets the Camera Offset
 	UPROPERTY(EditAnywhere)
@@ -62,8 +67,6 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		UCameraComponent* OurCamera;
-	UPROPERTY(EditAnywhere)
-		ATriggerVolume* TriggerBox;
 	
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 		UTurretAttachmenttComponent* TurretAttachment;
@@ -105,4 +108,10 @@ public:
 			TraceParams
 		);
 	}
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+		UProjectileFireControlComponent* ProjectileFireControlComponent;
+
+
+
 };

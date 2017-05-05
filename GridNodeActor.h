@@ -3,6 +3,7 @@
 #pragma once
 
 #include "GameFramework/Actor.h"
+#include "TurretHardPoint.h"
 #include "GridNodeActor.generated.h"
 
 UCLASS()
@@ -30,4 +31,5 @@ public:
 
 	UPROPERTY(EditAnywhere)
 		UStaticMeshComponent* NodeMesh;
+
 };

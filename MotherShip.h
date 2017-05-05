@@ -1,17 +1,14 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
+
 #include "Project_X_Ray.h"
 #include "GameFramework/Pawn.h"
 #include "FPSProjectile.h"
-#include "MainCharacter.h"
 #include "Project_X_RayGameModeBase.h"
-#include "IngameHUD.h"
 #include "TurretHardPoint.h"
 #include "TurretActor.h"
-#include "GridManagerActor.h"
 #include "MotherShip.generated.h"
-
 
 UCLASS()
 class PROJECT_X_RAY_API AMotherShip : public APawn
@@ -83,8 +80,7 @@ public:
 
 	APlayerController* OurPlayerController;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
-	TArray<ATurretHardPoint*> TurretHardPoints;
+
 
 	int HeavyTurretCount=0;
 	int MidTurretCount=0;
@@ -101,7 +97,8 @@ public:
 	void AddHeavyTurret();
 	void AddMidTurret();
 	void AddSmallTurret();
-
+	void TakeControl(float TimeToNextCameraChange);
+	void BeginTakeControl();
 	void HandlePlayerInput();
 
 	void EnterFirstPersonMode();
@@ -120,37 +117,17 @@ public:
 
 	float TimeToNextCameraChange;
 
-	UPROPERTY(EditAnywhere)
-	AMainCharacter* Player;
+	//UPROPERTY(EditAnywhere)
+	//AMainCharacter* Player;
 
 	//Sets the Camera Rotation
 	UPROPERTY(EditAnywhere)
-		FRotator ThirdPersonCameraRotation = FRotator(0.0f, 0.0f, 0.0f);
-
-	// Handles input for moving forward and backward.
-	UFUNCTION()
-		void MoveForward(float Value);
-
-	// Handles input for moving right and left.
-	UFUNCTION()
-		void MoveRight(float Value);
-	// Sets jump flag when key is pressed.
-	UFUNCTION()
-		void StartJump();
-
-	// Clears jump flag when key is released.
-	UFUNCTION()
-		void StopJump();
-	
-	// Function that handles firing projectiles.
-	UFUNCTION()
-		void Fire();
+		FRotator ThirdPersonCameraRotation = FRotator(0.0f, 0.0f, 0.0f);	
 
 	/** Use the actor currently in view (if derived from UsableActor) */
 	UFUNCTION(BlueprintCallable, Category = PlayerAbility)
 		virtual void Use();
-	UPROPERTY(EditAnywhere)
-	AGridManagerActor* GridManager;
+
 
 
 	  void GetMouseRay(bool Onclick);

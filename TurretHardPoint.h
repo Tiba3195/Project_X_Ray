@@ -10,6 +10,7 @@
 #include "MediumTurretActor.h"
 #include "LightTurretActor.h"
 #include "HeavyTurretActor.h"
+#include "HardPointAttachment.h"
 #include "TurretHardPoint.generated.h"
 
 
@@ -42,7 +43,7 @@ public:
 	
 	 void BuildTurret();
 	 void BuildTurret(FString TurretName);
-
+	
 	 bool HasTurret;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
@@ -50,6 +51,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 		UTurretAttachmenttComponent* TurretAttachment;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+		UHardPointAttachment* HardPointAttachment;
 
 	//UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	//UTurretComponent* TurretComponent;

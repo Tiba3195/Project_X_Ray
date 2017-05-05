@@ -7,13 +7,17 @@
 UTurretComponent::UTurretComponent(const class FObjectInitializer& PCIP)
 	: Super(PCIP)
 {
-
+	VisBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Vis Box"));
+	VisBox->bHiddenInGame = true;
+	VisBox->SetupAttachment(this);
 }
 
 // Sets default values
 UTurretComponent::UTurretComponent()
 {
-
+	VisBox = CreateDefaultSubobject<UBoxComponent>(TEXT("Vis Box"));
+	VisBox->bHiddenInGame = true;
+	VisBox->SetupAttachment(this);
 }
 
 

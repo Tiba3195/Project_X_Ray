@@ -25,12 +25,15 @@ ATurretActor::ATurretActor(const class FObjectInitializer& PCIP)
 	OurCamera->SetRelativeLocation(FirstPersonCameraOffset);
 	// Allow the pawn to control camera rotation.
 	//OurCamera->bUsePawnControlRotation = true;
+
+	//This was a super sucky bug, took me hrs to find out the correct way to do this!!
 	TurretAttachment = CreateDefaultSubobject<UTurretAttachmenttComponent>(TEXT("Turret Attachment"));
 	TurretAttachment->SetupAttachment(OurCamera);
 	TurretAttachment->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 
 
-
+    //TriggerBox = &ATriggerVolume::ATriggerVolume(PCIP);
+	//TriggerBox->SetActorLocation(TurretAttachment->RelativeLocation);
 	// Attach the Gun mesh to the FPS camera.
 	Gun->SetupAttachment(OurCamera);
 	// Attach the Base mesh to the FPS camera.
@@ -39,6 +42,11 @@ ATurretActor::ATurretActor(const class FObjectInitializer& PCIP)
 	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger Volume"));
 	Box->bHiddenInGame = false;
 	Box->SetupAttachment(RootComponent);	
+
+	ProjectileFireControlComponent = CreateDefaultSubobject<UProjectileFireControlComponent>(TEXT("Projectile Fire Control"));
+	MuzzleOffsets = TArray<USceneComponent*>();
+
+
 }
 
 // Sets default values
@@ -71,6 +79,9 @@ ATurretActor::ATurretActor()
 Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger Volume"));
 	Box->bHiddenInGame = false;
 	Box->SetupAttachment(RootComponent);
+
+	ProjectileFireControlComponent = CreateDefaultSubobject<UProjectileFireControlComponent>(TEXT("Projectile Fire Control"));
+	MuzzleOffsets = TArray<USceneComponent*>();
 }
 
 
@@ -102,15 +113,7 @@ void ATurretActor::Tick(float DeltaTime)
 
 void ATurretActor::RegisterDelegate()
 {
-	if (TriggerBox != nullptr)
-	{
-		if (!TriggerBox->OnActorBeginOverlap.IsAlreadyBound(this, &ATurretActor::OnBeginTriggerOverlap))
-		{
-			TriggerBox->OnActorBeginOverlap.AddDynamic(this, &ATurretActor::OnBeginTriggerOverlap);
-		}
-	}
-
-
+	
 	if (Box != nullptr)
 	{
 		if (!Box->OnComponentBeginOverlap.IsAlreadyBound(this, &ATurretActor::OnBeginBoxOverlap))
@@ -119,9 +122,13 @@ void ATurretActor::RegisterDelegate()
 			Box->OnComponentBeginOverlap.AddDynamic(this, &ATurretActor::OnBeginBoxOverlap);
 		}
 	}
+}
 
-
-
+void ATurretActor::AddMuzzleOffSet(USceneComponent * MuzzleOffset)
+{
+	
+	MuzzleOffset->SetupAttachment(Gun);
+	MuzzleOffsets.Add(MuzzleOffset);
 }
 
 void ATurretActor::OnBeginTriggerOverlap(AActor* OverlappedActor ,AActor* OtherActor)
@@ -145,13 +152,7 @@ void ATurretActor::OnBeginBoxOverlap(UPrimitiveComponent* OverlappedComponent, A
 
 void ATurretActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
-	if (TriggerBox != nullptr)
-	{
-		if (TriggerBox->OnActorBeginOverlap.IsAlreadyBound(this, &ATurretActor::OnBeginTriggerOverlap))
-		{
-			TriggerBox->OnActorBeginOverlap.RemoveDynamic(this, &ATurretActor::OnBeginTriggerOverlap);
-		}
-	}
+
 	if (Box != nullptr)
 	{
 		if (Box->OnComponentBeginOverlap.IsAlreadyBound(this, &ATurretActor::OnBeginBoxOverlap))

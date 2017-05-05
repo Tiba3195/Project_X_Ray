@@ -4,7 +4,7 @@
 #include "Project_X_Ray.h"
 
 #include "IngameHUD.h"
-
+#include "GlobalGameState.h"
 
 #define BUTTONTYPE_MAIN_RESTART 	1
 #define BUTTONTYPE_MAIN_EXIT 		2
@@ -45,10 +45,8 @@ const FLinearColor AIngameHUD::LC_Yellow = FLinearColor(1, 1, 0, 1);
 
 static	bool IsFirstPerson;
 
-
 //This is Really Bad, need to find a better way!
 static bool DoOnce = true;
-
 
 static	FVector4 CanvasDims;
 
@@ -67,6 +65,7 @@ static ATurretActor* CurrentSelectedTurret;
 
 INT32 InteractCounter = 0;
 UDataTable* GameObjectLookupTable;
+static AGlobalGameState* GS;
 
 AIngameHUD::AIngameHUD()
 {
@@ -86,21 +85,7 @@ AIngameHUD::AIngameHUD(const FObjectInitializer& ObjectInitializer) : Super(Obje
 
 	//Scale
 	GlobalHUDMult = 1;
-	DefaultFontScale = 0.7;   //scaling down a size 36 font
-
-							  //	 I recommend creating fonts at a high resolution / size like 36
-							  //			then you can scale down the font as needed to any size of your choice
-
-							  // this avoids needing to make multiple fonts for different sizes, but have a high
-							  // resolution when you use larger font sizes
-							  //Viewport Size
-//	if (bShowOverlays && (PlayerOwner != NULL))
-	//{
-		//FVector ViewPoint;
-		//FRotator ViewRotation;
-	//	PlayerOwner->GetPlayerViewPoint(ViewPoint, ViewRotation);
-	//	DrawActorOverlays(ViewPoint, ViewRotation);
-	//}
+	DefaultFontScale = 0.7;  
 
 	static ConstructorHelpers::FObjectFinder<UDataTable>GameObjectLookupDataTable_BP(TEXT("DataTable'/Game/HUD/UILayout.UILayout'"));
 	if (GameObjectLookupDataTable_BP.Object != nullptr )
@@ -108,13 +93,6 @@ AIngameHUD::AIngameHUD(const FObjectInitializer& ObjectInitializer) : Super(Obje
 		GameObjectLookupTable = GameObjectLookupDataTable_BP.Object;
 	}
 	DoOnce = true;
-
-
-
-	//FVector ViewportSize = FVector(GEngine->GameViewport->Viewport->GetSizeXY());
-	//FVector2D Center = FVector2D(Canvas->bCenterX, Canvas->bCenterY);
-	//Viewport Center!            
-	// FVector2D  ViewportCenter = FVector2D(ViewportSize.X / 2, ViewportSize.Y / 2);
 }
 
 void AIngameHUD::DrawCrosshair()
@@ -135,9 +113,7 @@ void AIngameHUD::DrawCrosshair()
 			TileItem.BlendMode = SE_BLEND_Translucent;
 			Canvas->DrawItem(TileItem);
 		}
-
-
-
+		
 
 	//	else
 	//	{
@@ -167,6 +143,7 @@ void AIngameHUD::SetupUIStuff()
 
 		for (int i = 0; i < Narray.Num(); i++)	
 		{
+			//kinda hacky, getting a pointer to an object then making a temp value, then changing the temp and then adding the temp to the list.... should i be unloading the pointer from memory???
 			FPanelStruct* GOLookupRow = GameObjectLookupTable->FindRow<FPanelStruct>(Narray[i],ContextString);
 			FPanelStruct tempnewPanel = FPanelStruct();
 			tempnewPanel.Dims = GOLookupRow->Dims;
@@ -196,7 +173,6 @@ void AIngameHUD::SetupUIStuff()
 	newButton4.type = BUTTONTYPE_CONFIRM_NO;
 	newButton4.toolTip = "";
 	newButton3.Dims = FVector4(XPos, XPos + 75, YPos + 20, YPos + 60);
-	//could use GetTextSize to streamline this
 
 	//Add to correct array
 	ButtonsConfirm.Add(newButton4);
@@ -248,20 +224,17 @@ void AIngameHUD::DrawHUD()
 			SetCursorMoveOnly(true);
 			ShowMenuWasChanged = false;
 		}
-
-
 	}
 	else
 	{
+		//this is where the menu first-> switch view-> no mouse control bug was, the problem was that i wasnt returning control to the PC after after hiding the menu in mother ship mode
+		// was really cunty to find!!
 		if (ShowMenuWasChanged == true)
 		{
 			ShowMenuWasChanged = false;
 		}	
 		SetCursorMoveOnly(false);
-	
-
 	}
-
 
 	//Draw HUD?
 	if (DontDrawHUD) return;
@@ -433,10 +406,22 @@ void AIngameHUD::PostInitializeComponents()
 
 }
 
+void AIngameHUD::BeginPlay()
+{
+	Super::BeginPlay();
+
+	UWorld* World = GetWorld();
+	if (World)
+	{	
+		GS = Cast<AGlobalGameState>(World->GetGameState());	
+		
+	}
+}
+
 void AIngameHUD::DrawHUD_DrawCursor()
 {
 	
-
+	//bug here, not showing hover icon on all buttons but the last one... proly has something to do with the v1 code becasue this has not changed since then!
 	//Cursor Hovering in a Button?
 	if (CursorHoveringInButton)
 	{
@@ -488,10 +473,8 @@ void AIngameHUD::DrawMainMenu()
 void AIngameHUD::DrawConfirm()
 {
 	//Blue rect with alpha 50%
-//	DrawJoyRect(Canvas->SizeX / 2 - 100, Canvas->SizeY / 2 - 50, 200, 100, FLinearColor(0, 0, 1, 0.2333));
 	VDrawTile(DialognBackground, Canvas->SizeX / 2 - 100, Canvas->SizeY / 2 - 50, 200, 100,FColor(255, 255, 255, 120)); //alpha 120/255
-	//Confirm Title
-
+	
 	//Draw buttons
 	DrawConfirmButtons();
 }
@@ -519,15 +502,12 @@ void AIngameHUD::DrawMainMenuButtons(FButtonStruct* button)
 		{
 			if (CurrentSelectedHardPoint != nullptr)
 			{
-				AMotherShip::CurrentHardPointIndex = CurrentSelectedHardPoint->HardPointIndex;
-
+				GS->SetCurrentHardPointIndex(CurrentSelectedHardPoint->HardPointIndex);
 			}
 			// check if not = "" because of a bug i wrote
 			if (button->Command != "")
-			{
-				
+			{				
 			   ThePC->ConsoleCommand(button->Command);
-			
 			}
 		}
 	}
@@ -584,8 +564,6 @@ void AIngameHUD::DrawConfirmButtons()
 		*ColorPtr, 2,
 		true
 	);
-
-
 }
 
 //===============
@@ -597,7 +575,6 @@ int32 AIngameHUD::CheckCursorInButton(const TArray<FButtonStruct>& ButtonArray)
 	{
 		CurCheckButton = &ButtonArray[b];
 		bool istrue = true;
-	
 	
 		//check cursor in bounds
 		if (CurCheckButton->Dims.X <= MouseLocation.X && MouseLocation.X <= CurCheckButton->Dims.Z &&
@@ -621,16 +598,13 @@ int32 AIngameHUD::CheckCursorInButton(const TArray<FButtonStruct>& ButtonArray)
 				{
 					ThePC->ConsoleCommand(CurCheckButton->Command);
 			    }
-
 				return ActiveButton_Type;
 				//~~
 				//no need to check rest of buttons
-			}
-			
+			}			
 		}
 		else
 		{
-
 		}
 	}
 

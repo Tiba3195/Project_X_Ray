@@ -24,6 +24,7 @@ Time 3:11am time for bed, last thing added selectable turrets! well boxes but th
 
 
 INT32 Counter = 0;
+static AGlobalGameState* GS;
 
 AMainCharacter::AMainCharacter(const class FObjectInitializer& PCIP)
 	: Super(PCIP)
@@ -45,6 +46,8 @@ AMainCharacter::AMainCharacter(const class FObjectInitializer& PCIP)
 	FPSMesh->SetOnlyOwnerSee(true);
 	// Attach the FPS mesh to the FPS camera.
 	FPSMesh->SetupAttachment(OurCamera);
+
+
 	// Disable some environmental shadowing to preserve the illusion of having a single mesh.
 	FPSMesh->bCastDynamicShadow = false;
 	//SEt Shadows
@@ -55,6 +58,25 @@ AMainCharacter::AMainCharacter(const class FObjectInitializer& PCIP)
 	MaxUseDistance = 300;
 	//Set Focus
 	bHasNewFocus = true;
+
+	FP_Gun = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("FirstPersonGunMesh"));
+	FP_Gun->SetupAttachment(FPSMesh);
+	// Disable some environmental shadowing to preserve the illusion of having a single mesh.
+	FP_Gun->bCastDynamicShadow = false;
+	//SEt Shadows
+	FP_Gun->CastShadow = false;
+
+	
+
+	MuzzleOffset = CreateDefaultSubobject<USceneComponent>(TEXT("Muzzle Offset"));
+	MuzzleOffset->SetupAttachment(FP_Gun);
+
+	ProjectileFireControlComponent= CreateDefaultSubobject<UProjectileFireControlComponent>(TEXT("Projectile Fire Control"));
+
+	// The owning player doesn't see the regular (third-person) body mesh.
+//	FP_Gun()->SetOwnerNoSee(true);
+
+
 }
 // Sets default values
 AMainCharacter::AMainCharacter()
@@ -87,6 +109,17 @@ AMainCharacter::AMainCharacter()
 void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
+
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		GS = Cast<AGlobalGameState>(World->GetGameState());
+		if (GS)
+		{
+			GS->Player = this;
+		}
+	}
+
 	if (GEngine)
 	{
 		// Put up a debug message for five seconds. The -1 "Key" value (first argument) indicates that we will never need to update or refresh this message.
@@ -141,7 +174,51 @@ void AMainCharacter::Tick(float DeltaTime)
 void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+
+	PlayerInputComponent->BindAction("Use", IE_Pressed, this, &AMainCharacter::Use);
+//	PlayerInputComponent->BindAction("ClearSelection", IE_Pressed, this, &AMainCharacter::ClearSelection);
+	//***The Rage***
+	PlayerInputComponent->BindAxis("MoveForward", this, &AMainCharacter::MoveForward);
+	PlayerInputComponent->BindAxis("MoveRight", this, &AMainCharacter::MoveRight);
+	// Set up "look" bindings.
+	PlayerInputComponent->BindAxis("Turn", this, &AMainCharacter::AddControllerYawInputEX);
+	PlayerInputComponent->BindAxis("LookUp", this, &AMainCharacter::AddControllerPitchInputEX);
+	// Set up "action" bindings.
+	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMainCharacter::StartJump);
+	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AMainCharacter::StopJump);
+	//Fire!!
+	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMainCharacter::Fire);
+
+	PlayerInputComponent->BindAction("ShowMenu", IE_Pressed, this, &AMainCharacter::ShowMenu);
+
+	PlayerInputComponent->BindAction("ThirdPersonMode", IE_Pressed, this, &AMainCharacter::SwitchToMotherShip);
+
 	// Set up "movement" bindings.
+}
+void AMainCharacter::ShowMenu()
+{
+	GS->showMenu();
+}
+void AMainCharacter::SwitchToMotherShip()
+{
+	GS->MainShip->BeginTakeControl();
+}
+void AMainCharacter::AddControllerPitchInputEX(float Val)
+{
+	if (Val != 0.f)
+	{
+		APlayerController* const PC = UGameplayStatics::GetPlayerController(this, 0);
+		PC->AddPitchInput(Val);
+	}
+}
+
+void AMainCharacter::AddControllerYawInputEX(float Val)
+{
+	if (Val != 0.f)
+	{
+		APlayerController* const PC = UGameplayStatics::GetPlayerController(this, 0);
+		PC->AddYawInput(Val);
+	}
 }
 
 void AMainCharacter::MoveForward(float Value)
@@ -176,38 +253,19 @@ void AMainCharacter::StopJump()
 }
 void AMainCharacter::Fire()
 {
-
+	// Bug here, projectile offset is funky and moves -+X depending on the camera rot, needs to be fixed!!
 			// Attempt to fire a projectile.
-			if (ProjectileClass)
-			{
-				// Get the camera transform.
-				FVector CameraLocation;
-				FRotator CameraRotation;
-				GetActorEyesViewPoint(CameraLocation, CameraRotation);
-				// Transform MuzzleOffset from camera space to world space.
-				FVector MuzzleLocation = CameraLocation + FTransform(CameraRotation).TransformVector(MuzzleOffset);
-				FRotator MuzzleRotation = CameraRotation;
-				// Skew the aim to be slightly upwards.
-				MuzzleRotation.Pitch += 10.0f;
-				UWorld* World = GetWorld();
-				if (World)
-				{
-					FActorSpawnParameters SpawnParams;
-					SpawnParams.Owner = this;
-					SpawnParams.Instigator = Instigator;
-					// Spawn the projectile at the muzzle.
-					AFPSProjectile* Projectile = World->SpawnActor<AFPSProjectile>(ProjectileClass, MuzzleLocation, MuzzleRotation, SpawnParams);
-					if (Projectile)
-					{
-						// Set the projectile's initial trajectory.
-						FVector LaunchDirection = MuzzleRotation.Vector();
-						Projectile->FireInDirection(LaunchDirection);
-					}
-				}
-			}
 		
-	
+			
+				// Transform MuzzleOffset from camera space to world space.
+				FVector MuzzleLocation = MuzzleOffset->GetSocketLocation("Muzzle");
 
+					// Get the camera transform.
+			
+
+				ProjectileFireControlComponent->Fire(MuzzleLocation,  this);
+				// Skew the aim to be slightly upwards.
+				
 }
 
 /*

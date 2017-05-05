@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "Project_X_Ray.h"
-#include "TurretActor.h"
+#include "GlobalGameState.h"
 #include "Project_X_RayGameModeBase.h"
 
 
@@ -23,7 +23,11 @@ AProject_X_RayGameModeBase::AProject_X_RayGameModeBase(const FObjectInitializer&
 		HUDClass = TheHUDOb.Class;
 	}
 
-
+	static ConstructorHelpers::FClassFinder<AGlobalGameState> TheGameStateOb(TEXT("/Game/BP_GlobalGameState.BP_GlobalGameState_C"));
+	if (TheGameStateOb.Class != NULL)
+	{
+		GameStateClass = TheGameStateOb.Class;
+	}
 }
 // Note that engine version 4.3 changed the method's name to StartPlay(), because of this engine versions before 4.3, or older tutorials, use BeginPlay()
 void AProject_X_RayGameModeBase::StartPlay()

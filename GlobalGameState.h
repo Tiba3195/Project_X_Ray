@@ -4,6 +4,11 @@
 
 #include "MainCharacter.h"
 #include "MotherShip.h"
+#include "TurretHardPoint.h"
+#include "GridManagerActor.h"
+#include "GridNodeActor.h"
+#include "TurretActor.h"
+#include "IngameHUD.h"
 #include "GameFramework/GameStateBase.h"
 #include "GlobalGameState.generated.h"
 
@@ -14,12 +19,50 @@ UCLASS()
 class PROJECT_X_RAY_API AGlobalGameState : public AGameStateBase
 {
 	GENERATED_BODY()
-	
+
+	AGlobalGameState(const class FObjectInitializer& PCIP);
+	AGlobalGameState();
+
+
+
+protected:
+
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
 public:
-	UPROPERTY(EditAnywhere)
-	AActor* MainShip;
+
+
+	static void ToggleViewMode();
+
+	INT32 GetCurrentHardPointIndex();
+	void SetCurrentHardPointIndex(INT32 index);
+
+	 void DisableInputEX();
+	 void EnableInputEX();
+	 void UsableInView();
+	 void NoUsableInView();
+	 void HardPointInView();
+	 void NoHardPointInView();
+	 void showMenu();
+	 void ClearSelected();
+
+	 void SetTurret(ATurretActor* turret);
+
+	 void SetHardPoint(ATurretHardPoint* hardpoint);
+
 
 	UPROPERTY(EditAnywhere)
-	AActor* Player;
-	
+	AMotherShip* MainShip;
+
+	UPROPERTY(EditAnywhere)
+	AMainCharacter* Player;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	TArray<ATurretHardPoint*> TurretHardPoints;
+
+	void AddTurretToHardPoint(FString TurretName, INT32 index);
+
+	UPROPERTY(EditAnywhere)
+		AGridManagerActor* GridManager;
 };

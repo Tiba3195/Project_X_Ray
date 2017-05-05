@@ -27,7 +27,6 @@ Time 3:11am time for bed, last thing added selectable turrets! well boxes but th
 #include "Project_X_RayGameModeBase.h"
 #include "UsableActor.h"
 #include "GlobalGameState.h"
-#include "IngameHUD.h"
 #include "TurretHardPoint.h"
 #include "UICommandRunner.h"
 
@@ -36,7 +35,7 @@ static ATurretHardPoint* CurrentSelectedHardPoint;
 static ATurretActor* CurrentSelectedTurret;
 
  int AMotherShip::CurrentHardPointIndex = -1;
- UClass* GridNodeActorClassHolder;
+ static AGlobalGameState* GS;
 
 AMotherShip::AMotherShip(const class FObjectInitializer& PCIP)
 	: Super(PCIP)
@@ -57,15 +56,6 @@ AMotherShip::AMotherShip(const class FObjectInitializer& PCIP)
 	//CameraOne->SetupAttachment(RootComponent);
 	//CameraOne->SetRelativeLocation(CameraOffset);
 	//CameraOne->SetRelativeRotation(CameraRotation);
-
-
-
-	static ConstructorHelpers::FClassFinder<AGridNodeActor> TheTurret(TEXT("/Game/WorldObjects/BP_GridNodeActor.BP_GridNodeActor_C"));
-	if (TheTurret.Class != NULL)
-	{
-		GridNodeActorClassHolder = TheTurret.Class;
-	}
-
 
 	OurVisibleComponent->SetupAttachment(RootComponent);
 	MaxUseDistance = 8000;
@@ -99,47 +89,24 @@ AMotherShip::AMotherShip()
 void AMotherShip::BeginPlay()
 {
 	Super::BeginPlay();
-	if (GridNodeActorClassHolder != NULL)
-	{
-		UWorld* World = GetWorld();
-		if (World)
-		{
-			AGridNodeActor* temp = Cast<AGridNodeActor>(GridNodeActorClassHolder->GetDefaultObject());
-			GridManager->Grid.Rows.SetNum(16);
-
-			for (int x = 0; x < 16; x++)
-			{
-				for (int y = 0; y < 16; y++)
-				{
-					FVector2D pos = FVector2D(x * 256 , y * 256);
-					FActorSpawnParameters SpawnParams;							
-					AGridNodeActor* NewGridCell = World->SpawnActor<AGridNodeActor>(GridNodeActorClassHolder, FVector(pos.X, pos.Y, 55) + FTransform(FRotator(0.0f, 0.0f, 0.0f)).TransformVector(FVector(-2048,-2048,0)), FRotator(0.0f, 0.0f, 0.0f), SpawnParams);
-					NewGridCell->Index = FVector2D(x, y);
-					FGridNodeHolder NodeHolder = FGridNodeHolder();
-					NodeHolder.GridNode = NewGridCell;					
-					GridManager->Grid.Rows[x].Cols.Add(NodeHolder);
-				};
-			};
-		}
-	}
-
-	for (int i = 0; i < TurretHardPoints.Num(); i++)
-	{
-		if (TurretHardPoints[i]->HardPointIndex == -1)
-		{
-			TurretHardPoints[i]->HardPointIndex = i;
-		}
-	};
-
-	//AProject_X_RayGameModeBase* gm = (AProject_X_RayGameModeBase*)GetWorld()->GetAuthGameMode();
 	OurPlayerController = UGameplayStatics::GetPlayerController(this, 0);
 	OurPlayerController->CheatClass = UICommandRunner::StaticClass();
-//	Player->Controller = OurPlayerController;
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		//this was a bug, was crashing the game because the gamestae was carrying over from runs.... very bad! needs to be a new one eash time!
+		//if (!GS)
+	//	{
+			GS = Cast<AGlobalGameState>(World->GetGameState());
+			GS->MainShip = this;
+	//	}
+	}
+
 	if (OurPlayerController)
 	{
 		if (CameraOne != nullptr)
 		{
-			AIngameHUD::EnableInputEX();
+			GS->EnableInputEX();			
 			// Cut instantly to camera one.
 			OurPlayerController->SetViewTarget(CameraOne);
 		}
@@ -166,7 +133,6 @@ void AMotherShip::Tick(float DeltaTime)
 	const float SmoothBlendTime = 0.75f;
 	TimeToNextCameraChange -= DeltaTime;
 
-
 	fCounter += 1;
 	//this is reall bad, can do much better!
 	if (fCounter >= 3)
@@ -174,9 +140,6 @@ void AMotherShip::Tick(float DeltaTime)
 		GetMouseRay(false);
 		fCounter = 0;
 	}
-
-
-
 	if (SwitchCamera2==true)
 	{	
 		if (TimeToNextCameraChange <= 0.0f)
@@ -184,23 +147,21 @@ void AMotherShip::Tick(float DeltaTime)
 			TimeToNextCameraChange += TimeBetweenCameraChanges;
 			// Find the actor that handles control for the local player.
 			 OurPlayerController = UGameplayStatics::GetPlayerController(this, 0);
-		//	UGameplayStatics::SetPlayerControllerID(OurPlayerController, 0);
+		
 			if (OurPlayerController)
-			{
-				//if ((OurPlayerController->GetViewTarget() != CameraOne) && (CameraOne != nullptr))
-			//	{
-					// Cut instantly to camera one.
-				//	OurPlayerController->SetViewTarget(CameraOne);
-				//}
+			{				
 				if ((OurPlayerController->GetViewTarget() != CameraTwo) && (CameraTwo != nullptr))
 				{
-					// Blend smoothly to camera two.
-				
+					// Blend smoothly to camera two.				
 					OurPlayerController->SetViewTargetWithBlend(CameraTwo, SmoothBlendTime);
 					InFirstPersonMode = true;
-					Player->IsActive = true;
-					AIngameHUD::ToggleViewMode();
-					AIngameHUD::DisableInputEX();
+					GS->Player->IsActive = true;
+					OurPlayerController->UnPossess();
+					// Posses the controller we clicked on  
+					OurPlayerController->Possess(GS->Player);
+
+					GS->ToggleViewMode();
+					GS->DisableInputEX();
 				}
 			}
 
@@ -210,27 +171,7 @@ void AMotherShip::Tick(float DeltaTime)
 
 	if (SwitchCamera1 == true)
 	{
-		if (TimeToNextCameraChange <= 0.0f)
-		{
-			TimeToNextCameraChange += TimeBetweenCameraChanges;
-
-			// Find the actor that handles control for the local player.
-		 OurPlayerController = UGameplayStatics::GetPlayerController(this, 0);
-			if (OurPlayerController)
-			{			
-				if ((OurPlayerController->GetViewTarget() != CameraOne) && (CameraOne != nullptr))
-				{
-					// Blend smoothly to camera one.
-					OurPlayerController->SetViewTargetWithBlend(CameraOne, SmoothBlendTime);
-					InFirstPersonMode = false;
-					Player->IsActive = false;
-					AIngameHUD::ToggleViewMode();
-					AIngameHUD::EnableInputEX();
-				}
-			}
-
-			SwitchCamera1 = false;
-		}
+		TakeControl(TimeToNextCameraChange);
 	}
 
 
@@ -265,8 +206,12 @@ void AMotherShip::Tick(float DeltaTime)
 
 	
 }
+
+
+
 void AMotherShip::ClearSelection()
 {
+	//Always check for null! EVERY TIME!!!!!
 	if (CurrentSelectedTurret != nullptr)
 	{
 		CurrentSelectedTurret = nullptr;
@@ -275,7 +220,7 @@ void AMotherShip::ClearSelection()
 	{
 		CurrentSelectedHardPoint = nullptr;
 	}
-	AIngameHUD::ClearSelected();
+	GS->ClearSelected();
 	if (GEngine)
 	{
 		// Put up a debug message for five seconds. The -1 "Key" value (first argument) indicates that we will never need to update or refresh this message.
@@ -308,25 +253,15 @@ void AMotherShip::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 
 	// Respond when our "Grow" key is pressed or released.
-	PlayerInputComponent->BindAction("ThirdPersonMode", IE_Pressed, this, &AMotherShip::EnterFirstPersonMode);
-
-	
+	PlayerInputComponent->BindAction("ThirdPersonMode", IE_Pressed, this, &AMotherShip::EnterFirstPersonMode);	
 
 	PlayerInputComponent->BindAction("MothershipMouseClick", IE_Pressed, this, &AMotherShip::DummyGetMouseRay);
 	// Respond when our "Grow" key is pressed or released.
 	PlayerInputComponent->BindAction("Use", IE_Pressed, this, &AMotherShip::Use);
 	PlayerInputComponent->BindAction("ClearSelection", IE_Pressed, this, &AMotherShip::ClearSelection);
-	//***The Rage***
-	PlayerInputComponent->BindAxis("MoveForward", this, &AMotherShip::MoveForward);
-	PlayerInputComponent->BindAxis("MoveRight", this, &AMotherShip::MoveRight);
-	// Set up "look" bindings.
-	PlayerInputComponent->BindAxis("Turn", this, &AMotherShip::AddControllerYawInputEX);
-	PlayerInputComponent->BindAxis("LookUp", this, &AMotherShip::AddControllerPitchInputEX);
-	// Set up "action" bindings.
-	PlayerInputComponent->BindAction("Jump", IE_Pressed, this, &AMotherShip::StartJump);
-	PlayerInputComponent->BindAction("Jump", IE_Released, this, &AMotherShip::StopJump);
+
 	//Fire!!
-	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMotherShip::Fire);
+//	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &AMotherShip::Fire);
 
 	PlayerInputComponent->BindAction("ShowMenu", IE_Pressed, this, &AMotherShip::ShowMenu);
 	PlayerInputComponent->BindAxis("RotateMainCamera", this, &AMotherShip::RotateMainCamera);
@@ -344,7 +279,7 @@ void AMotherShip::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 }
 void AMotherShip::ShowMenu()
 {
-	AIngameHUD::showMenu();
+	GS->showMenu();
 }
 void AMotherShip::DoSomething()
 {
@@ -374,14 +309,19 @@ void AMotherShip::DoubleParamFunction(float param1, int32 param2)
 }
 void AMotherShip::AddTurretToHardPoint(FString TurretName)
 {
-	int counter = TurretHardPoints.Num();
-	if (CurrentHardPointIndex >0 && CurrentHardPointIndex <= counter)
+	UWorld* World = GetWorld();
+//	AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
+	if (GS)
 	{
-		TurretHardPoints[CurrentHardPointIndex]->BuildTurret(TurretName);
+		int counter = GS->TurretHardPoints.Num();
+		if (CurrentHardPointIndex >= 0 && CurrentHardPointIndex <= counter)
+		{
+			GS->TurretHardPoints[CurrentHardPointIndex]->BuildTurret(TurretName);
 
-    }
+		}
+	}
+
 	CurrentHardPointIndex = -1;
-
 }
 void AMotherShip::RotateMainCamera(float value)
 {
@@ -398,7 +338,7 @@ void AMotherShip::PanShipCamera(float Val)
 			{
 				//ACameraActor* const PC = CastChecked<ACameraActor>(CameraTwo);
 
-				//This is really bad!
+				//This is really bad! it makes the mother ship spin round super fast 
 			    //CameraOne->SetActorRotation(FRotator(0.0f, 0.0f, Val));
 			}		
 	}
@@ -407,56 +347,16 @@ void AMotherShip::PanShipCamera(float Val)
 void AMotherShip::DoWork(float val)
 {
 
-	for (ATurretHardPoint* TurretHardPoint : TurretHardPoints)
-	{
-		if (TurretHardPoint->HasTurret == true)
-		{
+//	for (ATurretHardPoint* TurretHardPoint : TurretHardPoints)
+	//{
+		//if (TurretHardPoint->HasTurret == true)
+		//{
 			//TurretHardPoint = TurretHardPoint;
 			//TurretHardPoint->SetHiddenInGame(true);
 			//break;
-		}
-	}
+		//}
+	//}
 }
-
-//***The Rage*** Forwarding input to the player
-void AMotherShip::MoveForward(float Value)
-{	
-	if (InFirstPersonMode)
-	{
-		Player->MoveForward(Value);
-	}	
-}
-void AMotherShip::MoveRight(float Value)
-{
-	if (InFirstPersonMode)
-	{
-		Player->MoveRight(Value);
-	}	
-}
-void AMotherShip::StartJump()
-{
-	if (InFirstPersonMode)
-	{
-		Player->StartJump();
-	}
-}
-void AMotherShip::StopJump()
-{
-	if (InFirstPersonMode)
-	{
-		Player->StopJump();
-	}	
-}
-void AMotherShip::Fire()
-{
-	if (InFirstPersonMode)
-	{
-		Player->Fire();
-	}
-}
-
-//***End The Rage***
-
 
 //Laying out the stuff
 void AMotherShip::Move_XAxis(float AxisValue)
@@ -491,6 +391,40 @@ void AMotherShip::AddSmallTurret()
 {
 
 }
+void AMotherShip::TakeControl(float TimeToNextCameraChange)
+{
+	if (TimeToNextCameraChange <= 0.0f)
+	{
+		const float TimeBetweenCameraChanges = 2.0f;
+		const float SmoothBlendTime = 0.75f;
+		TimeToNextCameraChange += TimeBetweenCameraChanges;
+		// Find the actor that handles control for the local player.
+		OurPlayerController = UGameplayStatics::GetPlayerController(this, 0);
+		if (OurPlayerController)
+		{
+			if ((OurPlayerController->GetViewTarget() != CameraOne) && (CameraOne != nullptr))
+			{
+				OurPlayerController->UnPossess();
+				// Posses the controller we clicked on  
+				OurPlayerController->Possess(this);
+				// Blend smoothly to camera one.
+				OurPlayerController->SetViewTargetWithBlend(CameraOne, SmoothBlendTime);
+				InFirstPersonMode = false;
+				GS->Player->IsActive = false;
+		
+				GS->ToggleViewMode();
+				GS->EnableInputEX();
+			}			
+		}
+		SwitchCamera1 = false;
+	}
+}
+
+void AMotherShip::BeginTakeControl()
+{
+	SwitchCamera1 = true;
+}
+
 void AMotherShip::HandlePlayerInput()
 {
 
@@ -499,20 +433,10 @@ void AMotherShip::HandlePlayerInput()
 //Flips some Switches 
 void AMotherShip::EnterFirstPersonMode()
 {
-	if (InFirstPersonMode == true)
-	{
-		SwitchCamera1 = true;
-		SwitchCamera2 = false;
-	}
-	else
-	{
-		SwitchCamera2 = true;
-		SwitchCamera1 = false;
-	}	
 
+	SwitchCamera2 = true;
+	SwitchCamera1 = false;	
 }
-
-
 /*
 Performs raytrace to find closest looked-at UsableActor.
 */
@@ -537,7 +461,6 @@ AUsableActor* AMotherShip::GetUsableInView()
 	FHitResult Hit(ForceInit);
 	GetWorld()->LineTraceSingleByChannel(Hit, start_trace, end_trace, COLLISION_PROJECTILE, TraceParams);
 
-
 	return Cast<AUsableActor>(Hit.GetActor());
 }
 /*
@@ -545,7 +468,7 @@ Runs on Server. Perform "OnUsed" on currently viewed UsableActor if implemented.
 */
 void AMotherShip::Use()
 {	
-		Player->Use();	
+	GS->Player->Use();
 }
 
 void AMotherShip::DummyGetMouseRay()
@@ -556,8 +479,6 @@ void AMotherShip::DummyGetMouseRay()
 	}
 	GetMouseRay(true);
 }
-
-
 bool CheckUseable(AActor* actor, bool Onclick)
 {
 	ATurretActor* ClickedPawn = Cast<ATurretActor>(actor);
@@ -566,28 +487,25 @@ bool CheckUseable(AActor* actor, bool Onclick)
 	{
 		if (Onclick)
 		{
-			// Unposses ourselves  
-			//playerController->UnPossess();
-			// Posses the controller we clicked on  
-			//playerController->Possess(ClickedPawn);
+		
 			if (GEngine)
 			{
 				// Put up a debug message for five seconds. The -1 "Key" value (first argument) indicates that we will never need to update or refresh this message.
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Selected Turret"));
 			}
 			CurrentSelectedTurret = ClickedPawn;
-			AIngameHUD::SetTurret(CurrentSelectedTurret);
+			GS->SetTurret(CurrentSelectedTurret);
 			return true;
 		}
 		else
 		{
-			AIngameHUD::UsableInView();
+			GS->UsableInView();
 			return true;
 		}
 	}
 	else
 	{
-		AIngameHUD::NoUsableInView();
+		GS->NoUsableInView();
 		return false;
 	}
 
@@ -601,28 +519,25 @@ bool CheckTurretHardpoint(AActor* actor, bool Onclick)
 	{
 		if (Onclick)
 		{
-			// Unposses ourselves  
-			//playerController->UnPossess();
-			// Posses the controller we clicked on  
-			//playerController->Possess(ClickedPawn);
+	
 			if (GEngine)
 			{
 				// Put up a debug message for five seconds. The -1 "Key" value (first argument) indicates that we will never need to update or refresh this message.
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Selected Hardpoint"));
 			}
 			CurrentSelectedHardPoint = ClickedPawn;
-			AIngameHUD::SetHardPoint(CurrentSelectedHardPoint);
+			GS->SetHardPoint(CurrentSelectedHardPoint);
 			return true;
 		}
 		else
 		{
-			AIngameHUD::HardPointInView();
+			GS->HardPointInView();
 			return true;
 		}
 	}
 	else
 	{
-		AIngameHUD::NoHardPointInView();
+		GS->NoHardPointInView();
 		return false;
 	}
 
@@ -680,8 +595,8 @@ void AMotherShip::GetMouseRay(bool Onclick)
 			}
 			else
 			{
-				AIngameHUD::NoUsableInView();
-				AIngameHUD::NoHardPointInView();
+				GS->NoUsableInView();
+				GS->NoHardPointInView();
 			}
 		}
 
