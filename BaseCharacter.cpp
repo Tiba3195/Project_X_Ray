@@ -29,9 +29,64 @@ void ABaseCharacter::BeginPlay()
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if(IsBot)
+	{
+		FVector CameraLocation;
+		FRotator CameraRotation;
+		GetActorEyesViewPoint(CameraLocation, CameraRotation);
+		TArray<FOverlapResult> HitOut;
 
-	
+		if(!found)
+		{
+			if (VTraceSphere(this, CameraLocation, CameraLocation + DetectionRange, DetectionRange, HitOut) == true)
+			{
+				for (FOverlapResult hit : HitOut)
+				{
+					found = Cast<ABaseCharacter>(hit.GetActor());
+					if (found)
+					{
+						if (found->Team != Team)
+						{
 
+							GetCharacterMovement()->StopMovementImmediately();
+							HaveTarget = true;
+							break;
+						}
+						else
+						{
+							HaveTarget = false;
+							found = nullptr;
+						}
+					}
+					else
+					{
+						HaveTarget = false;
+					}
+				}
+			}
+		}
+
+
+		if(!HaveTarget)
+		{	
+			found = nullptr;
+		}
+
+		if (found != nullptr && HaveTarget)
+		{
+			float d = FVector::Distance(found->GetActorLocation(), GetActorLocation());
+			if (d >= DetectionRange + 200)
+			{
+				found = nullptr;
+				HaveTarget = false;
+			}
+			else
+			{
+				TurnToFace(found);
+			}
+			//TurnToFace(found);
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -47,7 +102,7 @@ float ABaseCharacter::TakeDamage(float DamageAmount, FDamageEvent const & Damage
 	if (ActualDamage > 0.f)
 	{
 		Health -= ActualDamage;
-		Health = FMath::Min(0.0f, Health);
+		Health = FMath::Max(0.0f, Health);
 
 		if (Health <= 0)
 		{
@@ -200,7 +255,7 @@ void ABaseCharacter::SetRagdollPhysics()
 	if (!bInRagdoll)
 	{
 		// hide and set short lifespan
-	    TurnOff();
+		TurnOff();
 		SetActorHiddenInGame(true);
 		SetLifeSpan(1.0f);
 	}
@@ -210,4 +265,17 @@ void ABaseCharacter::SetRagdollPhysics()
 		FTimerHandle TimerHandle;
 		GetWorldTimerManager().SetTimer(TimerHandle, this, &ABaseCharacter::Suicide, FMath::Max(0.1f, 10.0f), false);
 	}
+
+}
+
+
+void ABaseCharacter::TurnToFace(AActor* other)
+{
+
+		FVector Direction = other->GetActorLocation() - GetActorLocation();
+		FRotator NewControlRotation = Direction.Rotation();
+
+		NewControlRotation.Yaw = FRotator::ClampAxis(NewControlRotation.Yaw);
+		GetCapsuleComponent()->SetRelativeRotation(FRotator(0.0f, NewControlRotation.Yaw , 0.0f));
+	
 }

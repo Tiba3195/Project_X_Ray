@@ -2,7 +2,7 @@
 
 #include "Project_X_Ray.h"
 #include "TurretActor.h"
-#include "BaseCharacter.h"
+
 
 
 
@@ -18,30 +18,30 @@ ATurretActor::ATurretActor(const class FObjectInitializer& PCIP)
 	Base = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));
 
 
-	OurCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("OurCamera"));
+	//OurCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("OurCamera"));
 	// Attach our camera and visible object to our root component. Offset and rotate the camera.
-	OurCamera->SetupAttachment(RootComponent);
+	//OurCamera->SetupAttachment(RootComponent);
 	//OurCamera->SetRelativeLocation(FirstPersonCameraOffset + BaseEyeHeight);
-	OurCamera->SetRelativeLocation(FirstPersonCameraOffset);
+	//OurCamera->SetRelativeLocation(FirstPersonCameraOffset);
 	// Allow the pawn to control camera rotation.
 	//OurCamera->bUsePawnControlRotation = true;
 
 	//This was a super sucky bug, took me hrs to find out the correct way to do this!!
 	TurretAttachment = CreateDefaultSubobject<UTurretAttachmenttComponent>(TEXT("Turret Attachment"));
-	TurretAttachment->SetupAttachment(OurCamera);
-	TurretAttachment->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+	TurretAttachment->SetupAttachment(RootComponent);
+	//TurretAttachment->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 
 
     //TriggerBox = &ATriggerVolume::ATriggerVolume(PCIP);
 	//TriggerBox->SetActorLocation(TurretAttachment->RelativeLocation);
 	// Attach the Gun mesh to the FPS camera.
-	Gun->SetupAttachment(OurCamera);
+	
 	// Attach the Base mesh to the FPS camera.
-	Base->SetupAttachment(OurCamera);
-
-	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger Volume"));
-	Box->bHiddenInGame = false;
-	Box->SetupAttachment(RootComponent);	
+	Base->SetupAttachment(TurretAttachment);
+	Gun->SetupAttachment(Base);
+//	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger Volume"));
+	//Box->bHiddenInGame = false;
+	//Box->SetupAttachment(RootComponent);	
 
 	ProjectileFireControlComponent = CreateDefaultSubobject<UProjectileFireControlComponent>(TEXT("Projectile Fire Control"));
 	MuzzleOffsets = TArray<USceneComponent*>();
@@ -59,26 +59,26 @@ ATurretActor::ATurretActor()
 	Base = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("BaseMesh"));
 
 
-	OurCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("OurCamera"));
+//	OurCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("OurCamera"));
 	// Attach our camera and visible object to our root component. Offset and rotate the camera.
-	OurCamera->SetupAttachment(RootComponent);
-	OurCamera->SetRelativeLocation(FirstPersonCameraOffset);
+//	OurCamera->SetupAttachment(RootComponent);
+	//OurCamera->SetRelativeLocation(FirstPersonCameraOffset);
 
 
 	TurretAttachment = CreateDefaultSubobject<UTurretAttachmenttComponent>(TEXT("Turret Attachment"));
-	TurretAttachment->SetupAttachment(OurCamera);
-	TurretAttachment->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+	TurretAttachment->SetupAttachment(RootComponent);
+//	TurretAttachment->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
 	// Allow the pawn to control camera rotation.
 	//OurCamera->bUsePawnControlRotation = true;
 
-	// Attach the Gun mesh to the FPS camera.
-    Gun->SetupAttachment(OurCamera);
+
 	// Attach the Base mesh to the FPS camera.
-	Base->SetupAttachment(OurCamera);
-	
-Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger Volume"));
-	Box->bHiddenInGame = false;
-	Box->SetupAttachment(RootComponent);
+	Base->SetupAttachment(TurretAttachment);
+	// Attach the Gun mesh to the FPS camera.
+	Gun->SetupAttachment(Base);
+   // Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger Volume"));
+	//Box->bHiddenInGame = false;
+	//Box->SetupAttachment(RootComponent);
 
 	ProjectileFireControlComponent = CreateDefaultSubobject<UProjectileFireControlComponent>(TEXT("Projectile Fire Control"));
 	MuzzleOffsets = TArray<USceneComponent*>();
@@ -95,47 +95,62 @@ void ATurretActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-FVector CameraLocation;
-	FRotator CameraRotation;
-	GetActorEyesViewPoint(CameraLocation, CameraRotation);
-	TArray<FHitResult> HitOut;
-
-   if (VTraceSphere(this, CameraLocation, CameraLocation + 1000, 360, HitOut)==true)
-    {
-	  	for (FHitResult hit : HitOut)
-	 {
-			ABaseCharacter* found = Cast<ABaseCharacter>(hit.GetActor());
-			if (found)
+//FVector CameraLocation;
+	//FRotator CameraRotation;
+//	GetActorEyesViewPoint(CameraLocation, CameraRotation);
+	if (!found)
+	{
+		TArray<FOverlapResult> HitOut;
+		if (VTraceSphere(this, GetActorLocation(), GetActorLocation() + AttackRange, AttackRange, HitOut) == true)
+		{
+			for (FOverlapResult hit : HitOut)
 			{
-				TurnToFace(found);
-				break;
+				found = Cast<ABaseCharacter>(hit.GetActor());
+				if (found)
+				{					
+					break;
+				}
+				else
+				{
+					found = nullptr;
+				}
 			}
-	 
-	  }
+		}
+	}
+	else
+	{
+		float d = FVector::Distance(found->GetActorLocation(), GetActorLocation());
+		if (d >= AttackRange)
+		{
+			found = nullptr;
+		}
+		else
+		{
+			TurnToFace(found);
+		}	
 	}
 }
 
 void ATurretActor::RegisterDelegate()
 {
 	
-	if (Box != nullptr)
-	{
-		if (!Box->OnComponentBeginOverlap.IsAlreadyBound(this, &ATurretActor::OnBeginBoxOverlap))
-		{
+	//if (Box != nullptr)
+	//{
+	//	if (!Box->OnComponentBeginOverlap.IsAlreadyBound(this, &ATurretActor::OnBeginBoxOverlap))
+	//	{
 		
-			Box->OnComponentBeginOverlap.AddDynamic(this, &ATurretActor::OnBeginBoxOverlap);
-		}
-	}
+	//		Box->OnComponentBeginOverlap.AddDynamic(this, &ATurretActor::OnBeginBoxOverlap);
+	//	}
+	//}
 }
 
 void ATurretActor::TurnToFace(AActor* other)
 {
-	
-	FVector Direction = GetActorLocation() - other->GetActorLocation();
-	FRotator NewControlRotation = Direction.Rotation() ;
+	FVector Direction = other->GetActorLocation() - GetActorLocation();
+	FRotator NewControlRotation = Direction.Rotation();
 
-	NewControlRotation.Yaw = FRotator::ClampAxis(NewControlRotation.Yaw );	
-	Gun->SetRelativeRotation(FRotator(0.0f, NewControlRotation.Yaw,0.0f));
+	NewControlRotation.Yaw = FRotator::ClampAxis(NewControlRotation.Yaw);
+	Gun->SetRelativeRotation(FRotator(0.0f, NewControlRotation.Yaw, 0.0f));
 }
 
 void ATurretActor::AddMuzzleOffSet(USceneComponent * MuzzleOffset)
@@ -168,12 +183,12 @@ void ATurretActor::OnBeginBoxOverlap(UPrimitiveComponent* OverlappedComponent, A
 void ATurretActor::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 
-	if (Box != nullptr)
-	{
-		if (Box->OnComponentBeginOverlap.IsAlreadyBound(this, &ATurretActor::OnBeginBoxOverlap))
-		{
-			Box->OnComponentBeginOverlap.RemoveDynamic(this, &ATurretActor::OnBeginBoxOverlap);
-		}
-	}
+	//if (Box != nullptr)
+	//{
+	//	if (Box->OnComponentBeginOverlap.IsAlreadyBound(this, &ATurretActor::OnBeginBoxOverlap))
+	//	{
+		//	Box->OnComponentBeginOverlap.RemoveDynamic(this, &ATurretActor::OnBeginBoxOverlap);
+		//}
+	//}
 	Super::EndPlay(EndPlayReason);
 }

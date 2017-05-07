@@ -21,7 +21,7 @@ void ATopdownCppPlayerController::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 
 	
-		MoveToMouseCursor();
+		//MoveToMouseCursor();
 		
 
 }
