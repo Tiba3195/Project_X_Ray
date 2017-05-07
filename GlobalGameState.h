@@ -9,6 +9,7 @@
 #include "GridNodeActor.h"
 #include "TurretActor.h"
 #include "IngameHUD.h"
+#include "ControlPointActor.h"
 #include "GameFramework/GameStateBase.h"
 #include "GlobalGameState.generated.h"
 
@@ -51,6 +52,9 @@ public:
 
 	 void SetHardPoint(ATurretHardPoint* hardpoint);
 
+	 void AddControlPoint(AControlPointActor* controlPoint);
+
+	 AControlPointActor* GetControlPoint();
 
 	UPROPERTY(EditAnywhere)
 	AMotherShip* MainShip;
@@ -60,6 +64,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	TArray<ATurretHardPoint*> TurretHardPoints;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+		TArray<AControlPointActor*> ControlPointActors;
 
 	void AddTurretToHardPoint(FString TurretName, INT32 index);
 

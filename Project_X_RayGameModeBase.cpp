@@ -28,6 +28,8 @@ AProject_X_RayGameModeBase::AProject_X_RayGameModeBase(const FObjectInitializer&
 	{
 		GameStateClass = TheGameStateOb.Class;
 	}
+
+	
 }
 // Note that engine version 4.3 changed the method's name to StartPlay(), because of this engine versions before 4.3, or older tutorials, use BeginPlay()
 void AProject_X_RayGameModeBase::StartPlay()

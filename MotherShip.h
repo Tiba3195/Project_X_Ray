@@ -97,7 +97,7 @@ public:
 	void AddHeavyTurret();
 	void AddMidTurret();
 	void AddSmallTurret();
-	void TakeControl(float TimeToNextCameraChange);
+	void TakeControl(float timeToNextCameraChange);
 	void BeginTakeControl();
 	void HandlePlayerInput();
 

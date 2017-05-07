@@ -24,14 +24,15 @@ Time 3:11am time for bed, last thing added selectable turrets! well boxes but th
 
 
 INT32 Counter = 0;
-static AGlobalGameState* GS;
+INT32 FireCounter = 0;
+//static AGlobalGameState* GS;
 
 AMainCharacter::AMainCharacter(const class FObjectInitializer& PCIP)
 	: Super(PCIP)
 {
 	PrimaryActorTick.bCanEverTick = true;
 	//RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
-	OurVisibleComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Player VisibleComponent"));
+//	RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	OurCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("OurCamera"));
 
 	// Attach our camera and visible object to our root component. Offset and rotate the camera.
@@ -73,18 +74,23 @@ AMainCharacter::AMainCharacter(const class FObjectInitializer& PCIP)
 
 	ProjectileFireControlComponent= CreateDefaultSubobject<UProjectileFireControlComponent>(TEXT("Projectile Fire Control"));
 
+
 	// The owning player doesn't see the regular (third-person) body mesh.
 //	FP_Gun()->SetOwnerNoSee(true);
 
 
 }
+
+
+
+
 // Sets default values
 AMainCharacter::AMainCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
 	//RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
-	OurVisibleComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Player VisibleComponent"));
+	//RootComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	OurCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("OurCamera"));
 	// Attach our camera and visible object to our root component. Offset and rotate the camera.
 	OurCamera->SetupAttachment(RootComponent);
@@ -103,6 +109,8 @@ AMainCharacter::AMainCharacter()
 	// The owning player doesn't see the regular (third-person) body mesh.
 	GetMesh()->SetOwnerNoSee(true);	
 
+
+
 }
 
 // Called when the game starts or when spawned
@@ -110,6 +118,7 @@ void AMainCharacter::BeginPlay()
 {
 	Super::BeginPlay();
 
+	AGlobalGameState* GS;
 	UWorld* World = GetWorld();
 	if (World)
 	{
@@ -131,10 +140,24 @@ void AMainCharacter::BeginPlay()
 void AMainCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-	if (GEngine)
+	//IsShooting = false;
+//	if (GEngine)
+	//{
+	//	OurCamera->SetRelativeLocation(FirstPersonCameraOffset + BaseEyeHeight);
+	//}
+
+
+	if (IsShooting)
 	{
-		OurCamera->SetRelativeLocation(FirstPersonCameraOffset + BaseEyeHeight);
+		FireCounter += 1;
+		if (FireCounter > 12)
+		{
+			IsShooting = false;
+			FireCounter = 0;
+		}
+
 	}
+
 	if (IsActive)
 	{
 		Counter += 1;
@@ -197,11 +220,23 @@ void AMainCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputCompo
 }
 void AMainCharacter::ShowMenu()
 {
-	GS->showMenu();
+	UWorld* World = GetWorld();
+	AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
+	if (World)
+	{
+		GS = Cast<AGlobalGameState>(World->GetGameState());
+		GS->showMenu();
+	}
+
 }
 void AMainCharacter::SwitchToMotherShip()
 {
-	GS->MainShip->BeginTakeControl();
+	UWorld* World = GetWorld();
+	AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
+	if (World)
+	{
+		GS->MainShip->BeginTakeControl();
+	}
 }
 void AMainCharacter::AddControllerPitchInputEX(float Val)
 {
@@ -255,8 +290,8 @@ void AMainCharacter::Fire()
 {
 	// Bug here, projectile offset is funky and moves -+X depending on the camera rot, needs to be fixed!!
 			// Attempt to fire a projectile.
-		
-			
+	IsShooting = true;
+	FireCounter = 0;
 				// Transform MuzzleOffset from camera space to world space.
 				FVector MuzzleLocation = MuzzleOffset->GetSocketLocation("Muzzle");
 

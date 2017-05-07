@@ -40,6 +40,10 @@ public:
 	// Function that is called when the projectile hits something.
 	void OnHit(UPrimitiveComponent* HitComponent, AActor* OtherActor, UPrimitiveComponent* OtherComponent, FVector NormalImpulse, const FHitResult& Hit);
 
+	UPROPERTY(EditAnywhere, Category = Projectile)
+	UParticleSystem* ImpactFX;
 
+	UPROPERTY(EditAnywhere, Category = Projectile)
+		UParticleSystemComponent* TrailFX;
 	
 };

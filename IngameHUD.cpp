@@ -60,12 +60,13 @@ static	bool ShowMenu;
 static	bool ShowMenuWasChanged;
 
 static FVector2D SelectionMouseLocation;
-static ATurretHardPoint* CurrentSelectedHardPoint;
-static ATurretActor* CurrentSelectedTurret;
+
 
 INT32 InteractCounter = 0;
 UDataTable* GameObjectLookupTable;
-static AGlobalGameState* GS;
+
+static	 ATurretHardPoint* CurrentSelectedHardPoint;
+static	 ATurretActor* CurrentSelectedTurret;
 
 AIngameHUD::AIngameHUD()
 {
@@ -105,7 +106,7 @@ void AIngameHUD::DrawCrosshair()
 		if (IsFirstPerson)
 		{
 			// Offset by half of the texture's dimensions so that the center of the texture aligns with the center of the Canvas.
-			FVector2D CrossHairDrawPosition(Center.X - (FirstPersonCrosshairTexture->GetSurfaceWidth() * 0.5f), Center.Y - (FirstPersonCrosshairTexture->GetSurfaceHeight() * 0.5f));
+			FVector2D CrossHairDrawPosition(Center.X - (FirstPersonCrosshairTexture->GetSurfaceWidth() * 0.5f), Center.Y - (FirstPersonCrosshairTexture->GetSurfaceHeight() * 0.5f)-50);
 
 			// Draw the crosshair at the centerpoint.
 			FCanvasTileItem TileItem(CrossHairDrawPosition, FirstPersonCrosshairTexture->Resource, FLinearColor::White);
@@ -411,11 +412,11 @@ void AIngameHUD::BeginPlay()
 	Super::BeginPlay();
 
 	UWorld* World = GetWorld();
-	if (World)
-	{	
-		GS = Cast<AGlobalGameState>(World->GetGameState());	
+	//if (World)
+	//{	
+	//	GS = Cast<AGlobalGameState>(World->GetGameState());	
 		
-	}
+	//}
 }
 
 void AIngameHUD::DrawHUD_DrawCursor()
@@ -482,6 +483,9 @@ void AIngameHUD::DrawConfirm()
 //Buttons
 void AIngameHUD::DrawMainMenuButtons(FButtonStruct* button)
 {
+	AGlobalGameState* GS;
+	UWorld* World = GetWorld();
+	GS = Cast<AGlobalGameState>(World->GetGameState());
 	//Start Point
 	float XPos = button->Dims.X;
 	float YPos = button->Dims.Y;

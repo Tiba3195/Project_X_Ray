@@ -28,14 +28,14 @@ Time 3:11am time for bed, last thing added selectable turrets! well boxes but th
 #include "UsableActor.h"
 #include "GlobalGameState.h"
 #include "TurretHardPoint.h"
-#include "UICommandRunner.h"
+
 
 INT32 fCounter = 0;
-static ATurretHardPoint* CurrentSelectedHardPoint;
-static ATurretActor* CurrentSelectedTurret;
+static ATurretHardPoint* SelectedHardPoint;
+static ATurretActor* SelectedTurret;
 
  int AMotherShip::CurrentHardPointIndex = -1;
- static AGlobalGameState* GS;
+
 
 AMotherShip::AMotherShip(const class FObjectInitializer& PCIP)
 	: Super(PCIP)
@@ -90,8 +90,9 @@ void AMotherShip::BeginPlay()
 {
 	Super::BeginPlay();
 	OurPlayerController = UGameplayStatics::GetPlayerController(this, 0);
-	OurPlayerController->CheatClass = UICommandRunner::StaticClass();
+//	OurPlayerController->CheatClass = UICommandRunner::StaticClass();
 	UWorld* World = GetWorld();
+	AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
 	if (World)
 	{
 		//this was a bug, was crashing the game because the gamestae was carrying over from runs.... very bad! needs to be a new one eash time!
@@ -124,107 +125,123 @@ void AMotherShip::Tick(float DeltaTime)
 	Super::Tick(DeltaTime);
 	DoWork(DeltaTime);
 
-	if (GEngine)
+	AGlobalGameState* GS;
+	UWorld* World = GetWorld();
+	if (World)
 	{
+		//this was a bug, was crashing the game because the gamestae was carrying over from runs.... very bad! needs to be a new one eash time!
+		//if (!GS)
+		//	{
+		GS = Cast<AGlobalGameState>(World->GetGameState());
 
-	}
-
-	const float TimeBetweenCameraChanges = 2.0f;
-	const float SmoothBlendTime = 0.75f;
-	TimeToNextCameraChange -= DeltaTime;
-
-	fCounter += 1;
-	//this is reall bad, can do much better!
-	if (fCounter >= 3)
-	{
-		GetMouseRay(false);
-		fCounter = 0;
-	}
-	if (SwitchCamera2==true)
-	{	
-		if (TimeToNextCameraChange <= 0.0f)
+		if (GEngine)
 		{
-			TimeToNextCameraChange += TimeBetweenCameraChanges;
-			// Find the actor that handles control for the local player.
-			 OurPlayerController = UGameplayStatics::GetPlayerController(this, 0);
-		
-			if (OurPlayerController)
-			{				
-				if ((OurPlayerController->GetViewTarget() != CameraTwo) && (CameraTwo != nullptr))
-				{
-					// Blend smoothly to camera two.				
-					OurPlayerController->SetViewTargetWithBlend(CameraTwo, SmoothBlendTime);
-					InFirstPersonMode = true;
-					GS->Player->IsActive = true;
-					OurPlayerController->UnPossess();
-					// Posses the controller we clicked on  
-					OurPlayerController->Possess(GS->Player);
 
-					GS->ToggleViewMode();
-					GS->DisableInputEX();
+		}
+
+		const float TimeBetweenCameraChanges = 2.0f;
+		const float SmoothBlendTime = 0.75f;
+		TimeToNextCameraChange -= DeltaTime;
+
+		fCounter += 1;
+		//this is reall bad, can do much better!
+		if (fCounter >= 3)
+		{
+			GetMouseRay(false);
+			fCounter = 0;
+		}
+		if (SwitchCamera2 == true)
+		{
+			if (TimeToNextCameraChange <= 0.0f)
+			{
+				TimeToNextCameraChange += TimeBetweenCameraChanges;
+				// Find the actor that handles control for the local player.
+				OurPlayerController = UGameplayStatics::GetPlayerController(this, 0);
+
+				if (OurPlayerController)
+				{
+					if ((OurPlayerController->GetViewTarget() != CameraTwo) && (CameraTwo != nullptr))
+					{
+						// Blend smoothly to camera two.				
+						OurPlayerController->SetViewTargetWithBlend(CameraTwo, SmoothBlendTime);
+						InFirstPersonMode = true;
+						GS->Player->IsActive = true;
+						OurPlayerController->UnPossess();
+						// Posses the controller we clicked on  
+						OurPlayerController->Possess(GS->Player);
+
+						GS->ToggleViewMode();
+						GS->DisableInputEX();
+					}
+				}
+
+				SwitchCamera2 = false;
+			}
+		}
+
+		if (SwitchCamera1 == true)
+		{
+			TakeControl(TimeToNextCameraChange);
+		}
+
+
+		if (Controller && Controller->IsLocalController())
+		{
+			AUsableActor* usable = GetUsableInView();
+
+			// End Focus
+			if (FocusedUsableActor != usable)
+			{
+				if (FocusedUsableActor)
+				{
+					FocusedUsableActor->EndFocusItem();
+				}
+
+				bHasNewFocus = true;
+			}
+
+			// Assign new Focus
+			FocusedUsableActor = usable;
+
+			// Start Focus.
+			if (usable)
+			{
+				if (bHasNewFocus)
+				{
+					usable->StartFocusItem();
+					bHasNewFocus = false;
 				}
 			}
-
-			SwitchCamera2 = false;
-		}	
-	}
-
-	if (SwitchCamera1 == true)
-	{
-		TakeControl(TimeToNextCameraChange);
-	}
-
-
-	if (Controller && Controller->IsLocalController())
-	{
-		AUsableActor* usable = GetUsableInView();
-
-		// End Focus
-		if (FocusedUsableActor != usable)
-		{
-			if (FocusedUsableActor)
-			{
-				FocusedUsableActor->EndFocusItem();
-			}
-
-			bHasNewFocus = true;
 		}
 
-		// Assign new Focus
-		FocusedUsableActor = usable;
-
-		// Start Focus.
-		if (usable)
-		{
-			if (bHasNewFocus)
-			{
-				usable->StartFocusItem();
-				bHasNewFocus = false;
-			}
-		}
 	}
-
-	
 }
 
 
 
 void AMotherShip::ClearSelection()
 {
-	//Always check for null! EVERY TIME!!!!!
-	if (CurrentSelectedTurret != nullptr)
+	AGlobalGameState* GS;
+	UWorld* World = GetWorld();
+	if (World)
 	{
-		CurrentSelectedTurret = nullptr;
-	}
-	if (CurrentSelectedHardPoint != nullptr)
-	{
-		CurrentSelectedHardPoint = nullptr;
-	}
-	GS->ClearSelected();
-	if (GEngine)
-	{
-		// Put up a debug message for five seconds. The -1 "Key" value (first argument) indicates that we will never need to update or refresh this message.
-		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Selected Cleared"));
+
+		GS = Cast<AGlobalGameState>(World->GetGameState());
+		//Always check for null! EVERY TIME!!!!!
+		if (SelectedTurret != nullptr)
+		{
+			SelectedTurret = nullptr;
+		}
+		if (SelectedHardPoint != nullptr)
+		{
+			SelectedHardPoint = nullptr;
+		}
+		GS->ClearSelected();
+		if (GEngine)
+		{
+			// Put up a debug message for five seconds. The -1 "Key" value (first argument) indicates that we will never need to update or refresh this message.
+			GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Selected Cleared"));
+		}
 	}
 }
 
@@ -279,6 +296,8 @@ void AMotherShip::SetupPlayerInputComponent(UInputComponent* PlayerInputComponen
 }
 void AMotherShip::ShowMenu()
 {
+	UWorld* World = GetWorld();
+	AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
 	GS->showMenu();
 }
 void AMotherShip::DoSomething()
@@ -310,7 +329,7 @@ void AMotherShip::DoubleParamFunction(float param1, int32 param2)
 void AMotherShip::AddTurretToHardPoint(FString TurretName)
 {
 	UWorld* World = GetWorld();
-//	AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
+	AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
 	if (GS)
 	{
 		int counter = GS->TurretHardPoints.Num();
@@ -391,13 +410,16 @@ void AMotherShip::AddSmallTurret()
 {
 
 }
-void AMotherShip::TakeControl(float TimeToNextCameraChange)
+void AMotherShip::TakeControl(float timeToNextCameraChange)
 {
 	if (TimeToNextCameraChange <= 0.0f)
 	{
+		UWorld* World = GetWorld();
+		AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
+
 		const float TimeBetweenCameraChanges = 2.0f;
 		const float SmoothBlendTime = 0.75f;
-		TimeToNextCameraChange += TimeBetweenCameraChanges;
+		timeToNextCameraChange += TimeBetweenCameraChanges;
 		// Find the actor that handles control for the local player.
 		OurPlayerController = UGameplayStatics::GetPlayerController(this, 0);
 		if (OurPlayerController)
@@ -468,6 +490,8 @@ Runs on Server. Perform "OnUsed" on currently viewed UsableActor if implemented.
 */
 void AMotherShip::Use()
 {	
+	UWorld* World = GetWorld();
+	AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
 	GS->Player->Use();
 }
 
@@ -479,10 +503,10 @@ void AMotherShip::DummyGetMouseRay()
 	}
 	GetMouseRay(true);
 }
-bool CheckUseable(AActor* actor, bool Onclick)
+bool CheckUseable(AActor* actor, bool Onclick, UWorld* World, AGlobalGameState* GS)
 {
-	ATurretActor* ClickedPawn = Cast<ATurretActor>(actor);
-
+	ATurretActor* ClickedPawn = Cast<ATurretActor>(actor);	
+	
 	if (ClickedPawn != nullptr)
 	{
 		if (Onclick)
@@ -493,8 +517,8 @@ bool CheckUseable(AActor* actor, bool Onclick)
 				// Put up a debug message for five seconds. The -1 "Key" value (first argument) indicates that we will never need to update or refresh this message.
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Selected Turret"));
 			}
-			CurrentSelectedTurret = ClickedPawn;
-			GS->SetTurret(CurrentSelectedTurret);
+			SelectedTurret = ClickedPawn;
+			GS->SetTurret(SelectedTurret);
 			return true;
 		}
 		else
@@ -511,10 +535,11 @@ bool CheckUseable(AActor* actor, bool Onclick)
 
 	//return false;
 }
-bool CheckTurretHardpoint(AActor* actor, bool Onclick)
+bool CheckTurretHardpoint(AActor* actor, bool Onclick, UWorld* World, AGlobalGameState* GS)
 {
 	ATurretHardPoint* ClickedPawn = Cast<ATurretHardPoint>(actor);
 
+	
 	if (ClickedPawn != nullptr)
 	{
 		if (Onclick)
@@ -525,8 +550,8 @@ bool CheckTurretHardpoint(AActor* actor, bool Onclick)
 				// Put up a debug message for five seconds. The -1 "Key" value (first argument) indicates that we will never need to update or refresh this message.
 				GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Selected Hardpoint"));
 			}
-			CurrentSelectedHardPoint = ClickedPawn;
-			GS->SetHardPoint(CurrentSelectedHardPoint);
+			SelectedHardPoint = ClickedPawn;
+			GS->SetHardPoint(SelectedHardPoint);
 			return true;
 		}
 		else
@@ -554,6 +579,8 @@ void AMotherShip::GetMouseRay(bool Onclick)
 		FVector mouseLocation, mouseDirection;
 		APlayerController* playerController = Cast<APlayerController>(GetController());
 	
+		UWorld* World = GetWorld();
+		AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
 
 		if (playerController != nullptr)
 		{
@@ -570,14 +597,14 @@ void AMotherShip::GetMouseRay(bool Onclick)
 				bool Hit = false;
 				// If the actor we intersected with is a controller posses it  
 				//AUsableActor* ClickedPawn = Cast<AUsableActor>(HitResult.GetActor());
-				if(CheckUseable(HitResult.GetActor(), Onclick))
+				if(CheckUseable(HitResult.GetActor(), Onclick, World, GS))
 				{
 					Hit = true;
 			    }
 
 				if (!Hit)
 				{
-					if (CheckTurretHardpoint(HitResult.GetActor(), Onclick))
+					if (CheckTurretHardpoint(HitResult.GetActor(), Onclick, World, GS))
 					{
 						Hit = true;
 					}

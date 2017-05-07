@@ -79,7 +79,7 @@ public:
 		const FVector& Start,
 		const FVector& End,
 		const float Radius,
-		FHitResult& HitOut,
+		TArray<FHitResult>& HitOut,
 		ECollisionChannel TraceChannel = ECC_Pawn
 	){
 		FCollisionQueryParams TraceParams(FName(TEXT("VictoreCore Trace")), true, ActorToIgnore);
@@ -89,21 +89,21 @@ public:
 
 		//Ignore Actors
 		TraceParams.AddIgnoredActor(ActorToIgnore);
-
+		//TraceParams.AddIgnoredComponent(UStaticMeshComponent::GetArchetype)
 		//Re-initialize hit info
-		HitOut = FHitResult(ForceInit);
+		HitOut = TArray<FHitResult>();
 
 		//Get World Source
 		TObjectIterator< APlayerController > ThePC;
 		if (!ThePC) return false;
 
 
-		return ThePC->GetWorld()->SweepSingleByChannel(
+		return ThePC->GetWorld()->SweepMultiByProfile(
 			HitOut,
 			Start,
 			End,
 			FQuat(),
-			TraceChannel,
+			"pawn",
 			FCollisionShape::MakeSphere(Radius),
 			TraceParams
 		);
@@ -111,7 +111,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 		UProjectileFireControlComponent* ProjectileFireControlComponent;
+	void TurnToFace(AActor* other);
 
-
-
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
+	float AttackRange = 2000;
 };

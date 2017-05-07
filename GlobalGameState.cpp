@@ -3,7 +3,9 @@
 
 
 #include "Project_X_Ray.h"
+
 #include "GlobalGameState.h"
+
 
 UClass* GridNodeActorClassHolder;
 UClass* GridManagerActorClassHolder;
@@ -23,6 +25,7 @@ AGlobalGameState::AGlobalGameState(const class FObjectInitializer& PCIP)
 	}
 
 	TurretHardPoints = TArray<ATurretHardPoint*>();
+    ControlPointActors = TArray<AControlPointActor*>();
 }
 
 AGlobalGameState::AGlobalGameState()
@@ -39,7 +42,7 @@ AGlobalGameState::AGlobalGameState()
 	}
 
 	TurretHardPoints = TArray<ATurretHardPoint*>();
-
+	ControlPointActors = TArray<AControlPointActor*>();
 }
 
 void AGlobalGameState::BeginPlay()
@@ -139,6 +142,17 @@ void AGlobalGameState::SetTurret(ATurretActor * turret)
 void AGlobalGameState::SetHardPoint(ATurretHardPoint * hardpoint)
 {
 	AIngameHUD::SetHardPoint(hardpoint);
+}
+
+void AGlobalGameState::AddControlPoint(AControlPointActor * controlPoint)
+{
+	ControlPointActors.Add(controlPoint);
+}
+
+AControlPointActor * AGlobalGameState::GetControlPoint()
+{
+	int index = rand() % ControlPointActors.Num();
+	return ControlPointActors[index];
 }
 
 

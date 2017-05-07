@@ -2,7 +2,7 @@
 
 #include "Project_X_Ray.h"
 #include "TurretActor.h"
-
+#include "BaseCharacter.h"
 
 
 
@@ -95,20 +95,24 @@ void ATurretActor::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	
-	//if (GEngine)
-	//{
-	//	OurCamera->SetRelativeLocation(FirstPersonCameraOffset);
-	//}
+FVector CameraLocation;
+	FRotator CameraRotation;
+	GetActorEyesViewPoint(CameraLocation, CameraRotation);
+	TArray<FHitResult> HitOut;
 
-
-	// Get the camera transform.
-//	FVector CameraLocation;
-//	FRotator CameraRotation;
-//	GetActorEyesViewPoint(CameraLocation, CameraRotation);
-//	FHitResult HitOut;
-
-	//VTraceSphere(this, CameraLocation, CameraLocation + 1000, 2000, HitOut,ECC_MAX);
+   if (VTraceSphere(this, CameraLocation, CameraLocation + 1000, 360, HitOut)==true)
+    {
+	  	for (FHitResult hit : HitOut)
+	 {
+			ABaseCharacter* found = Cast<ABaseCharacter>(hit.GetActor());
+			if (found)
+			{
+				TurnToFace(found);
+				break;
+			}
+	 
+	  }
+	}
 }
 
 void ATurretActor::RegisterDelegate()
@@ -124,6 +128,16 @@ void ATurretActor::RegisterDelegate()
 	}
 }
 
+void ATurretActor::TurnToFace(AActor* other)
+{
+	
+	FVector Direction = GetActorLocation() - other->GetActorLocation();
+	FRotator NewControlRotation = Direction.Rotation() ;
+
+	NewControlRotation.Yaw = FRotator::ClampAxis(NewControlRotation.Yaw );	
+	Gun->SetRelativeRotation(FRotator(0.0f, NewControlRotation.Yaw,0.0f));
+}
+
 void ATurretActor::AddMuzzleOffSet(USceneComponent * MuzzleOffset)
 {
 	
@@ -136,6 +150,7 @@ void ATurretActor::OnBeginTriggerOverlap(AActor* OverlappedActor ,AActor* OtherA
 	// This gets called when an actor begins to overlap with the current trigger volume
 	if (GEngine)
 	{
+		TurnToFace(OtherActor);
 		// Put up a debug message for five seconds. The -1 "Key" value (first argument) indicates that we will never need to update or refresh this message.
 		GEngine->AddOnScreenDebugMessage(-1, 5.0f, FColor::Red, TEXT("Inside Turret Trigger Volume"));
 	}

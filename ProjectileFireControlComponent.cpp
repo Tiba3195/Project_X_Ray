@@ -46,7 +46,7 @@ void UProjectileFireControlComponent::Fire(FVector MuzzleLocation, AActor* Owner
 		Owner->GetActorEyesViewPoint(CameraLocation, CameraRotation);
 		FRotator MuzzleRotation = CameraRotation;
 		// Skew the aim to be slightly upwards.
-		MuzzleRotation.Pitch += 10.0f;
+		MuzzleRotation.Pitch += 5.0f;
 		UWorld* World = GetWorld();
 		if (World)
 		{

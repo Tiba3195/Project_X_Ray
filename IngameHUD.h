@@ -96,7 +96,7 @@ class PROJECT_X_RAY_API AIngameHUD : public AHUD
 {
 	GENERATED_BODY()
 
-	
+
 
 
 public:
@@ -105,6 +105,8 @@ public:
 
 	
 protected:
+
+
 	// This will be drawn at the center of the screen.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Common UI")
 		UTexture2D* FirstPersonCrosshairTexture;

@@ -21,30 +21,40 @@ AFPSProjectile::AFPSProjectile()
 	// Use this component to drive this projectile's movement.
 	ProjectileMovementComponent = CreateDefaultSubobject<UProjectileMovementComponent>(TEXT("ProjectileMovementComponent"));
 	ProjectileMovementComponent->SetUpdatedComponent(CollisionComponent);
-	ProjectileMovementComponent->InitialSpeed = 3000;
-	ProjectileMovementComponent->MaxSpeed = 3000.0f;
+	ProjectileMovementComponent->InitialSpeed = 4000.0f;
+	ProjectileMovementComponent->MaxSpeed = 4000.0f;
 	ProjectileMovementComponent->bRotationFollowsVelocity = true;
 	ProjectileMovementComponent->bShouldBounce = true;
 	ProjectileMovementComponent->Bounciness = 0.3f;
-
+	TrailFX = CreateDefaultSubobject<UParticleSystemComponent>(TEXT("TrailFX"));
+	TrailFX->SetupAttachment(CollisionComponent);
 	// Die after 3 seconds.
 	InitialLifeSpan = MaxAge;
 
-	RegisterDelegate();
+	
 }
 
 // Called when the game starts or when spawned
 void AFPSProjectile::BeginPlay()
 {
 	Super::BeginPlay();
-	
+	RegisterDelegate();
 }
 
 // Called every frame
 void AFPSProjectile::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	
 
+		if (TrailFX)
+		{
+			TrailFX->SetRelativeLocation(FVector(0.0f, 0.0f, 0.0f));
+			TrailFX->Activate();
+
+			//UGameplayStatics::SpawnEmitterAtLocation(this, TrailFX, GetActorLocation(), GetActorRotation());
+
+		}
 }
 
 // Function that initializes the projectile's velocity in the shoot direction.
@@ -56,10 +66,39 @@ void AFPSProjectile::FireInDirection(const FVector& ShootDirection)
 
 void AFPSProjectile::OnHit(UPrimitiveComponent * HitComponent, AActor * OtherActor, UPrimitiveComponent * OtherComponent, FVector NormalImpulse, const FHitResult & Hit)
 {
-	if (OtherActor != this && OtherComponent->IsSimulatingPhysics())
+
+
+	if (OtherActor != this )
 	{
-		OtherComponent->AddImpulseAtLocation(ProjectileMovementComponent->Velocity * 100.0f, Hit.ImpactPoint);
+
+		if (OtherComponent->IsSimulatingPhysics())
+		{
+			OtherComponent->AddImpulseAtLocation(ProjectileMovementComponent->Velocity * 100.0f, Hit.ImpactPoint);
+		}
+		if (OtherActor->bCanBeDamaged)
+		{
+			FRadialDamageEvent DamageType = FRadialDamageEvent();
+			DamageType.Params.BaseDamage = 2000;
+			DamageType.Params.DamageFalloff = 750;
+			DamageType.Params.MinimumDamage = 350;
+			DamageType.Params.OuterRadius = 200;
+			DamageType.Origin = Hit.ImpactPoint;
+			//DamageType.DamageTypeClass
+			OtherActor->TakeDamage(2000, DamageType,GetOwner()->GetInstigatorController(),this);
+		}
 	}
+
+
+	if (ImpactFX)
+	{
+	
+		UGameplayStatics::SpawnEmitterAtLocation(this, ImpactFX, Hit.ImpactPoint, GetActorRotation());
+
+	}
+
+	ProjectileMovementComponent->Deactivate();
+	LifeSpanExpired();
+
 }
 
 void AFPSProjectile::RegisterDelegate()
@@ -77,13 +116,14 @@ void AFPSProjectile::RegisterDelegate()
 void AFPSProjectile::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {
 	if (CollisionComponent == nullptr)
-		return;
-	if (CollisionComponent->OnComponentHit.IsAlreadyBound(this, &AFPSProjectile::OnHit))
 	{
-		CollisionComponent->OnComponentHit.RemoveDynamic(this, &AFPSProjectile::OnHit);
+		if (CollisionComponent->OnComponentHit.IsAlreadyBound(this, &AFPSProjectile::OnHit))
+		{
+			CollisionComponent->OnComponentHit.RemoveDynamic(this, &AFPSProjectile::OnHit);
+		}
 	}
-
 	Super::EndPlay(EndPlayReason);
+
 }
 
 
