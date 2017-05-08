@@ -18,8 +18,12 @@ void ATopdownCppPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+<<<<<<< HEAD
 
 
+=======
+	
+>>>>>>> origin/master
 		//MoveToMouseCursor();
 		
 

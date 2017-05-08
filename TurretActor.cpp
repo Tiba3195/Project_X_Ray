@@ -38,10 +38,14 @@ ATurretActor::ATurretActor(const class FObjectInitializer& PCIP)
 	
 	// Attach the Base mesh to the FPS camera.
 	Base->SetupAttachment(TurretAttachment);
+<<<<<<< HEAD
 
 	Forward = CreateDefaultSubobject<UArrowComponent>(TEXT("Arrow Attachment"));
 	Forward->SetupAttachment(Base);
 	Gun->SetupAttachment(Forward);
+=======
+	Gun->SetupAttachment(Base);
+>>>>>>> origin/master
 //	Box = CreateDefaultSubobject<UBoxComponent>(TEXT("Trigger Volume"));
 	//Box->bHiddenInGame = false;
 	//Box->SetupAttachment(RootComponent);	
@@ -100,6 +104,7 @@ void ATurretActor::Tick(float DeltaTime)
 	TArray<FOverlapResult> HitOut;
 	TArray<ABaseCharacter*> ListtoSort = TArray<ABaseCharacter*>();
 
+<<<<<<< HEAD
 		// Find objects in range
 		if (VTraceSphere(this, GetActorLocation(), GetActorLocation() + AttackRange, AttackRange, HitOut) == true)
 		{
@@ -145,6 +150,42 @@ void ATurretActor::Tick(float DeltaTime)
 				}
 			}
 		}	
+=======
+//FVector CameraLocation;
+	//FRotator CameraRotation;
+//	GetActorEyesViewPoint(CameraLocation, CameraRotation);
+	if (!found)
+	{
+		TArray<FOverlapResult> HitOut;
+		if (VTraceSphere(this, GetActorLocation(), GetActorLocation() + AttackRange, AttackRange, HitOut) == true)
+		{
+			for (FOverlapResult hit : HitOut)
+			{
+				found = Cast<ABaseCharacter>(hit.GetActor());
+				if (found)
+				{					
+					break;
+				}
+				else
+				{
+					found = nullptr;
+				}
+			}
+		}
+	}
+	else
+	{
+		float d = FVector::Distance(found->GetActorLocation(), GetActorLocation());
+		if (d >= AttackRange)
+		{
+			found = nullptr;
+		}
+		else
+		{
+			TurnToFace(found);
+		}	
+	}
+>>>>>>> origin/master
 }
 void ATurretActor::RegisterDelegate()
 {
@@ -165,7 +206,11 @@ void ATurretActor::TurnToFace(AActor* other)
 	FRotator NewControlRotation = Direction.Rotation();
 
 	NewControlRotation.Yaw = FRotator::ClampAxis(NewControlRotation.Yaw);
+<<<<<<< HEAD
 	Forward->SetRelativeRotation(FRotator(0.0f, NewControlRotation.Yaw, 0.0f));
+=======
+	Gun->SetRelativeRotation(FRotator(0.0f, NewControlRotation.Yaw, 0.0f));
+>>>>>>> origin/master
 }
 
 void ATurretActor::AddMuzzleOffSet(USceneComponent * MuzzleOffset)

@@ -29,8 +29,45 @@ void ABaseCharacter::BeginPlay()
 void ABaseCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if(IsBot)
+	{
+		FVector CameraLocation;
+		FRotator CameraRotation;
+		GetActorEyesViewPoint(CameraLocation, CameraRotation);
+		TArray<FOverlapResult> HitOut;
+
+		if(!found)
+		{
+			if (VTraceSphere(this, CameraLocation, CameraLocation + DetectionRange, DetectionRange, HitOut) == true)
+			{
+				for (FOverlapResult hit : HitOut)
+				{
+					found = Cast<ABaseCharacter>(hit.GetActor());
+					if (found)
+					{
+						if (found->Team != Team)
+						{
+
+							GetCharacterMovement()->StopMovementImmediately();
+							HaveTarget = true;
+							break;
+						}
+						else
+						{
+							HaveTarget = false;
+							found = nullptr;
+						}
+					}
+					else
+					{
+						HaveTarget = false;
+					}
+				}
+			}
+		}
 
 
+<<<<<<< HEAD
 
 
 
@@ -74,10 +111,16 @@ void ABaseCharacter::Tick(float DeltaTime)
 		if(!HaveTarget)
 		{	
 			found = nullptr;			
+=======
+		if(!HaveTarget)
+		{	
+			found = nullptr;
+>>>>>>> origin/master
 		}
 
 		if (found != nullptr && HaveTarget)
 		{
+<<<<<<< HEAD
 			if (found->IsPendingKill())
 			{
 
@@ -86,12 +129,18 @@ void ABaseCharacter::Tick(float DeltaTime)
 			if (d >= DetectionRange + 200)
 			{
 		
+=======
+			float d = FVector::Distance(found->GetActorLocation(), GetActorLocation());
+			if (d >= DetectionRange + 200)
+			{
+>>>>>>> origin/master
 				found = nullptr;
 				HaveTarget = false;
 			}
 			else
 			{
 				TurnToFace(found);
+<<<<<<< HEAD
 				if (CurrentFireRate >= FireRate)
 				{
 					if (ProjectileFireControlComponent)
@@ -111,6 +160,12 @@ void ABaseCharacter::Tick(float DeltaTime)
 
 
 	CurrentFireRate += DeltaTime;
+=======
+			}
+			//TurnToFace(found);
+		}
+	}
+>>>>>>> origin/master
 }
 
 // Called to bind functionality to input
@@ -294,9 +349,12 @@ void ABaseCharacter::SetRagdollPhysics()
 }
 
 
+<<<<<<< HEAD
 
 
 
+=======
+>>>>>>> origin/master
 void ABaseCharacter::TurnToFace(AActor* other)
 {
 

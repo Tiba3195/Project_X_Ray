@@ -69,8 +69,13 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 		float AttackRange = 500;
+<<<<<<< HEAD
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Gameplay)
 	UArrowComponent* Forward;
+=======
+
+
+>>>>>>> origin/master
 
 protected:
 
@@ -126,4 +131,8 @@ public:
 		return (ip1.Health < ip2.Health);
 	}
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> origin/master
 };

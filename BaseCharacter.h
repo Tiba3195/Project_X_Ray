@@ -140,7 +140,11 @@ public:
 	) {
 		FCollisionQueryParams TraceParams(FName(TEXT("VictoreCore Trace")), true, ActorToIgnore);
 		//TraceParams.bTraceComplex = true;
+<<<<<<< HEAD
 	//	TraceParams.bTraceAsyncScene = true;
+=======
+		TraceParams.bTraceAsyncScene = true;
+>>>>>>> origin/master
 		TraceParams.bReturnPhysicalMaterial = false;
 
 		//Ignore Actors

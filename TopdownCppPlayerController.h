@@ -21,9 +21,12 @@ public:
 	/** Navigate player to the current mouse cursor location. */
 	void MoveToMouseCursor();
 
+<<<<<<< HEAD
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
+=======
+>>>>>>> origin/master
 protected:
 	/** True if the controlled character should navigate to the mouse cursor. */
 	uint32 bMoveToMouseCursor : 1;
