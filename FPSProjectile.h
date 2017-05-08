@@ -45,5 +45,15 @@ public:
 
 	UPROPERTY(EditAnywhere, Category = Projectile)
 		UParticleSystemComponent* TrailFX;
-	
+	UPROPERTY(EditAnywhere, Category = Projectile)
+		float Damage = 100.0f;
+	UPROPERTY(EditAnywhere, Category = Projectile)
+		float DamageFalloff = 750;
+	UPROPERTY(EditAnywhere, Category = Projectile)
+		float MinimumDamage = 350;
+	UPROPERTY(EditAnywhere, Category = Projectile)
+		float OuterRadius = 200;
+
+
 };
+

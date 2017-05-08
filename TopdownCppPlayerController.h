@@ -18,6 +18,12 @@ public:
 
 	AControlPointActor* CurrentTarget;
 
+	/** Navigate player to the current mouse cursor location. */
+	void MoveToMouseCursor();
+
+	// Called when the game starts or when spawned
+	virtual void BeginPlay() override;
+
 protected:
 	/** True if the controlled character should navigate to the mouse cursor. */
 	uint32 bMoveToMouseCursor : 1;
@@ -27,11 +33,11 @@ protected:
 	
 	// End PlayerController interface
 
-	/** Navigate player to the current mouse cursor location. */
-	void MoveToMouseCursor();
 
 	/** Navigate player to the given world location. */
 	void SetNewMoveDestination(const FVector DestLocation);
+
+
 
 };
 

@@ -63,8 +63,10 @@ void ATPPCharacter::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-
-
+	if (!HaveTarget)
+	{
+		OurPlayerController->MoveToMouseCursor();
+	}
 }
 
 // Called when the game starts or when spawned

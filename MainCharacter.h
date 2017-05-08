@@ -94,6 +94,6 @@ public:
 
 	void SwitchToMotherShip();
 	
-	
+	void StopShooting();
 
 };

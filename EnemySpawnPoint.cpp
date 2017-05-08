@@ -59,9 +59,13 @@ void AEnemySpawnPoint::Tick(float DeltaTime)
 	{
 		if (Player->bDead)
 		{
-			Player->OurPlayerController->Destroy(false, true);
-			Player->OurPlayerController->RemoveFromRoot();
-			Player->OurPlayerController = nullptr;
+			if (Player->OurPlayerController)
+			{
+				Player->OurPlayerController->Destroy(false, true);
+				Player->OurPlayerController->RemoveFromRoot();
+				Player->OurPlayerController = nullptr;
+			}
+		
 			Player->LifeSpanExpired();
 			Player->Destroy(false, true);
 			Player = nullptr;
@@ -71,9 +75,12 @@ void AEnemySpawnPoint::Tick(float DeltaTime)
 	}
 	else
 	{
-		Player->OurPlayerController->Destroy(false, true);
-		Player->OurPlayerController->RemoveFromRoot();
-		Player->OurPlayerController = nullptr;
+		if (Player->OurPlayerController)
+		{
+			Player->OurPlayerController->Destroy(false, true);
+			Player->OurPlayerController->RemoveFromRoot();
+			Player->OurPlayerController = nullptr;
+		}
 		Player->LifeSpanExpired();
 		Player->Destroy(false, true);
 		Player = nullptr;
@@ -93,12 +100,17 @@ void AEnemySpawnPoint::HandleReSpawn()
 {	
 
 	Player = GetWorld()->SpawnActor<ATPPCharacter>(ATPPCharacterClassHolder, GetActorLocation(), GetActorRotation());
-	Player->OurPlayerController = GetWorld()->SpawnActor<ATopdownCppPlayerController>(Player->GetActorLocation(), Player->GetActorRotation());
-	
-	Player->OurPlayerController->SetPawn(Player);
-	Player->OurPlayerController->Possess(Player);
 
-	RegisterDelegate();
+	if (IsValid(Player))
+	{
+		Player->OurPlayerController = GetWorld()->SpawnActor<ATopdownCppPlayerController>(Player->GetActorLocation(), Player->GetActorRotation());
+
+		Player->OurPlayerController->SetPawn(Player);
+		Player->OurPlayerController->Possess(Player);
+
+		RegisterDelegate();
+	}
+
 }
 void AEnemySpawnPoint::EndPlay(const EEndPlayReason::Type EndPlayReason)
 {

@@ -8,9 +8,7 @@
 #include "Kismet/HeadMountedDisplayFunctionLibrary.h"
 #include "GlobalGameState.h"
 
-
-
-//static AGlobalGameState* GS;
+static AGlobalGameState* CurrentGS;
 ATopdownCppPlayerController::ATopdownCppPlayerController()
 {
 
@@ -20,26 +18,22 @@ void ATopdownCppPlayerController::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
-	
-		MoveToMouseCursor();
+
+
+		//MoveToMouseCursor();
 		
 
 }
 
 void ATopdownCppPlayerController::MoveToMouseCursor()
 {
-	UWorld* World = GetWorld();
-	AGlobalGameState* GS = Cast<AGlobalGameState>(World->GetGameState());
-		if (World)
-		{
-			GS = Cast<AGlobalGameState>(World->GetGameState());
-		}
-
-		if (GS)
+	if (this)
+	{
+		if (CurrentGS)
 		{
 			if (!CurrentTarget)
 			{
-				CurrentTarget = GS->GetControlPoint();
+				CurrentTarget = CurrentGS->GetControlPoint();
 			}
 			else
 			{
@@ -70,6 +64,23 @@ void ATopdownCppPlayerController::MoveToMouseCursor()
 
 			}
 		}
+		//}
+
+	}
+		
+	
+}
+
+void ATopdownCppPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+	UWorld* World = GetWorld();
+
+	//AGlobalGameState* GS;// = Cast<AGlobalGameState>(World->GetGameState());
+	if (World)
+	{
+		CurrentGS = Cast<AGlobalGameState>(World->GetGameState());
+	}
 
 }
 

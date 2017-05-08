@@ -78,13 +78,13 @@ void AFPSProjectile::OnHit(UPrimitiveComponent * HitComponent, AActor * OtherAct
 		if (OtherActor->bCanBeDamaged)
 		{
 			FRadialDamageEvent DamageType = FRadialDamageEvent();
-			DamageType.Params.BaseDamage = 2000;
-			DamageType.Params.DamageFalloff = 750;
-			DamageType.Params.MinimumDamage = 350;
-			DamageType.Params.OuterRadius = 200;
+			DamageType.Params.BaseDamage = Damage;
+			DamageType.Params.DamageFalloff = DamageFalloff;
+			DamageType.Params.MinimumDamage = MinimumDamage;
+			DamageType.Params.OuterRadius = OuterRadius;
 			DamageType.Origin = Hit.ImpactPoint;
 			//DamageType.DamageTypeClass
-			OtherActor->TakeDamage(2000, DamageType,GetOwner()->GetInstigatorController(),this);
+			OtherActor->TakeDamage(Damage, DamageType,GetOwner()->GetInstigatorController(),this);
 		}
 	}
 

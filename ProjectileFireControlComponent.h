@@ -24,7 +24,7 @@ public:
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	void Fire(FVector MuzzleLocation, AActor* Owner);
+	void Fire(USceneComponent* Muzzle, AActor* Owner,bool IsBot);
 	
 	// Projectile class to spawn.
 	UPROPERTY(EditDefaultsOnly, Category = Projectile)

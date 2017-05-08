@@ -33,7 +33,7 @@ void UProjectileFireControlComponent::TickComponent(float DeltaTime, ELevelTick 
 	// ...
 }
 
-void UProjectileFireControlComponent::Fire(FVector MuzzleLocation, AActor* Owner)
+void UProjectileFireControlComponent::Fire(USceneComponent* Muzzle, AActor* Owner, bool IsBot)
 {
 
 	// Bug here, projectile offset is funky and moves -+X depending on the camera rot, needs to be fixed!!
@@ -43,10 +43,14 @@ void UProjectileFireControlComponent::Fire(FVector MuzzleLocation, AActor* Owner
 
 		FVector CameraLocation;
 		FRotator CameraRotation;
-		Owner->GetActorEyesViewPoint(CameraLocation, CameraRotation);
-		FRotator MuzzleRotation = CameraRotation;
+		//Owner->GetActorEyesViewPoint(CameraLocation, CameraRotation);
+		FRotator MuzzleRotation = Muzzle->GetComponentRotation();
 		// Skew the aim to be slightly upwards.
-		MuzzleRotation.Pitch += 5.0f;
+		if (!IsBot)
+		{
+		//	MuzzleRotation.Pitch += 5.0f;
+		}
+		
 		UWorld* World = GetWorld();
 		if (World)
 		{
@@ -54,7 +58,7 @@ void UProjectileFireControlComponent::Fire(FVector MuzzleLocation, AActor* Owner
 			SpawnParams.Owner = Owner;
 			//SpawnParams.Instigator = Owner;
 			// Spawn the projectile at the muzzle.
-			AFPSProjectile* Projectile = World->SpawnActor<AFPSProjectile>(ProjectileClass, MuzzleLocation, MuzzleRotation, SpawnParams);
+			AFPSProjectile* Projectile = World->SpawnActor<AFPSProjectile>(ProjectileClass, Muzzle->GetSocketLocation("Muzzle"), MuzzleRotation, SpawnParams);
 			if (Projectile)
 			{
 				// Set the projectile's initial trajectory.

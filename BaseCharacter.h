@@ -16,6 +16,11 @@ public:
 	ABaseCharacter();
 	ABaseCharacter(const class FObjectInitializer& PCIP);
 
+	ABaseCharacter* found;
+	/** animation played on death */
+	UPROPERTY(EditAnywhere)
+		bool HaveTarget = false;
+
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = Health)
 		bool bInRagdoll = false;
 
@@ -49,6 +54,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Mesh)
 		USceneComponent* MuzzleOffset;
 
+	// First-person mesh (arms), visible only to the owning player.
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Mesh)
+		float FireRate = 3;
+
+	 float CurrentFireRate;
+
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 
@@ -58,8 +69,7 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-
+	
 	/** Pawn suicide */
 	virtual void Suicide();
 
@@ -95,7 +105,17 @@ protected:
 
 	/** stop playing montage */
 	virtual void StopAnimMontage(class UAnimMontage* AnimMontage) override;
+	/** animation played on death */
+	UPROPERTY(EditAnywhere)
+		float DetectionRange = 256;
+	/** animation played on death */
+	UPROPERTY(EditAnywhere)
+		int Team = 0;
 
+	UPROPERTY(EditAnywhere)
+		bool IsBot=false;
+
+	void TurnToFace(AActor* other);
 public:	
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
@@ -110,7 +130,41 @@ public:
 
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, class AActor* DamageCauser) override;
 
+	static FORCEINLINE bool VTraceSphere(
+		AActor* ActorToIgnore,
+		const FVector& Start,
+		const FVector& End,
+		const float Radius,
+		TArray<FOverlapResult>& HitOut,
+		ECollisionChannel TraceChannel = ECC_Pawn
+	) {
+		FCollisionQueryParams TraceParams(FName(TEXT("VictoreCore Trace")), true, ActorToIgnore);
+		//TraceParams.bTraceComplex = true;
+	//	TraceParams.bTraceAsyncScene = true;
+		TraceParams.bReturnPhysicalMaterial = false;
+
+		//Ignore Actors
+		TraceParams.AddIgnoredActor(ActorToIgnore);
+		//TraceParams.AddIgnoredComponent(UStaticMeshComponent::GetArchetype)
+		//Re-initialize hit info
+		HitOut = TArray<FOverlapResult>();
+
+		//Get World Source
+		TObjectIterator< APlayerController > ThePC;
+		if (!ThePC) return false;
 
 
+		return ThePC->GetWorld()->OverlapMultiByProfile(
+			HitOut,
+			Start,			
+			FQuat(),
+			"pawn",
+			FCollisionShape::MakeSphere(Radius),
+			TraceParams
+		);
+	}
+
+
+	
 
 };

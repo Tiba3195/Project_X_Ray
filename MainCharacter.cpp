@@ -139,24 +139,7 @@ void AMainCharacter::BeginPlay()
 // Called every frame
 void AMainCharacter::Tick(float DeltaTime)
 {
-	Super::Tick(DeltaTime);
-	//IsShooting = false;
-//	if (GEngine)
-	//{
-	//	OurCamera->SetRelativeLocation(FirstPersonCameraOffset + BaseEyeHeight);
-	//}
-
-
-	if (IsShooting)
-	{
-		FireCounter += 1;
-		if (FireCounter > 12)
-		{
-			IsShooting = false;
-			FireCounter = 0;
-		}
-
-	}
+	Super::Tick(DeltaTime);	
 
 	if (IsActive)
 	{
@@ -288,21 +271,22 @@ void AMainCharacter::StopJump()
 }
 void AMainCharacter::Fire()
 {
-	// Bug here, projectile offset is funky and moves -+X depending on the camera rot, needs to be fixed!!
-			// Attempt to fire a projectile.
-	IsShooting = true;
-	FireCounter = 0;
-				// Transform MuzzleOffset from camera space to world space.
-				FVector MuzzleLocation = MuzzleOffset->GetSocketLocation("Muzzle");
 
-					// Get the camera transform.
-			
+	if (!IsShooting)
+	{	
+		IsShooting = true;
+		FireCounter = 0;
+		ProjectileFireControlComponent->Fire(MuzzleOffset, this, IsBot);
 
-				ProjectileFireControlComponent->Fire(MuzzleLocation,  this);
-				// Skew the aim to be slightly upwards.
+		FTimerHandle TimerHandle;
+		GetWorldTimerManager().SetTimer(TimerHandle, this, &AMainCharacter::StopShooting, 0.128f, false);
+	}			
 				
 }
-
+void AMainCharacter::StopShooting()
+{
+	IsShooting = false;
+}
 /*
 Performs raytrace to find closest looked-at UsableActor.
 */
